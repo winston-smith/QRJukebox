@@ -12,6 +12,7 @@ import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'utils/track_url_parser.dart';
 
 // ─── Entry Point ───────────────────────────────────────────────────────────
 
@@ -54,26 +55,6 @@ class QRJukeboxApp extends StatelessWidget {
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-
-/// Parses a URL into its components: host, folders, trackId.
-/// The last segment is always the trackId, segments before are folders.
-({String host, List<String> folders, String trackId})? parseUrl(String raw) {
-  try {
-    final url = raw.startsWith('http') ? raw : 'https://$raw';
-    final uri = Uri.parse(url);
-    final host = uri.host;
-    final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-    
-    if (host.isNotEmpty && segs.length >= 2) {
-      return (
-        host: host,
-        folders: segs.sublist(0, segs.length - 1),
-        trackId: segs.last,
-      );
-    }
-  } catch (_) {}
-  return null;
-}
 
 /// Resolves the local audio file by traversing the folder structure.
 Future<File?> findTrackFile({
@@ -388,7 +369,7 @@ class _ScannerPageState extends State<ScannerPage> {
 // ─── Player Page ───────────────────────────────────────────────────────────
 
 class PlayerPage extends StatefulWidget {
-  final ({String host, List<String> folders, String trackId}) parsed;
+  final ParsedTrackUrl parsed;
   final String mediaRoot;
   final SharedPreferences prefs;
 
