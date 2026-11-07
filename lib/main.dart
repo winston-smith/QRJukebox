@@ -249,6 +249,7 @@ class _HomePageState extends State<HomePage> {
         title: const Text('QR Jukebox'),
         actions: [
           IconButton(
+            key: const Key('settingsButton'),
             icon: const Icon(Icons.settings),
             onPressed: _openSettings,
             tooltip: 'Settings',
@@ -285,6 +286,7 @@ class _HomePageState extends State<HomePage> {
                       hasRoot
                           ? p.basename(_mediaRoot)
                           : 'No media folder configured',
+                      key: const Key('mediaFolderText'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: hasRoot ? Colors.green : Colors.orange,
                       ),
@@ -297,6 +299,7 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
+                  key: const Key('scanQRButton'),
                   onPressed: _startScanner,
                   icon: const Icon(Icons.qr_code_scanner),
                   label: const Text('Scan QR Code'),
@@ -309,6 +312,7 @@ class _HomePageState extends State<HomePage> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
+                  key: const Key('enterURLButton'),
                   onPressed: _showUrlDialog,
                   icon: const Icon(Icons.edit),
                   label: const Text('Enter URL manually'),
@@ -322,6 +326,7 @@ class _HomePageState extends State<HomePage> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
+                    key: const Key('mediaFolderSetupButton'),
                     onPressed: _openSettings,
                     icon: const Icon(Icons.folder_open),
                     label: const Text('Setup Media Folder'),
@@ -1010,6 +1015,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           SwitchListTile(
             title: const Text('Keep Screen Awake'),
+            key: const Key('keepAwakeSwitch'),
             subtitle: const Text('Prevent device from sleeping while using the app'),
             value: widget.prefs.getBool('keepAwake') ?? true,
             onChanged: _toggleKeepAwake,
@@ -1024,6 +1030,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 8),
           SwitchListTile(
             title: const Text('Show Stopwatch'),
+            key: const Key('showStopwatchSwitch'),
             subtitle: const Text('Track time spent on each card'),
             value: widget.prefs.getBool('showStopwatch') ?? false,
             onChanged: _toggleStopwatch,
@@ -1032,6 +1039,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           const SizedBox(height: 16),
           TextField(
+            key: const Key('playbackOffsetTextField'),
             controller: _offsetCtrl,
             keyboardType: TextInputType.number,
             decoration: const InputDecoration(
@@ -1055,6 +1063,7 @@ class _SettingsPageState extends State<SettingsPage> {
             children: [
               Expanded(
                 child: TextField(
+                  key: const Key('mediaFolderTextField'),
                   controller: _pathCtrl,
                   decoration: const InputDecoration(
                     labelText: 'Path',
@@ -1080,6 +1089,7 @@ class _SettingsPageState extends State<SettingsPage> {
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
+              key: const Key('savePathButton'),
               onPressed: () => _savePath(_pathCtrl.text),
               icon: const Icon(Icons.save),
               label: const Text('Save Path'),
