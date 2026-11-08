@@ -33,7 +33,7 @@ class PlayerPage extends StatefulWidget {
 }
 
 class _PlayerPageState extends State<PlayerPage> {
-  final _player = AudioPlayer();
+  AudioPlayer? _audioPlayer;
 
   File? _file;
   AudioMetadata? _tags;
@@ -50,7 +50,15 @@ class _PlayerPageState extends State<PlayerPage> {
   void initState() {
     super.initState();
     _stopwatch.start();
-    _player.onPlayerStateChanged.listen((s) {
+    _loadAndPlay();
+  }
+
+  void _initializePlayer() {
+    if (_audioPlayer != null) return;
+
+    _audioPlayer = AudioPlayer();
+
+    _audioPlayer!.onPlayerStateChanged.listen((s) {
       if (mounted) {
         setState(() {
           _playing = s == PlayerState.playing;
@@ -59,27 +67,28 @@ class _PlayerPageState extends State<PlayerPage> {
       }
     });
 
-    _player.onPositionChanged.listen((d) {
+    _audioPlayer!.onPositionChanged.listen((d) {
       if (mounted) setState(() => _pos = d);
     });
-    _player.onDurationChanged.listen((d) {
+
+    _audioPlayer!.onDurationChanged.listen((d) {
       if (mounted) setState(() => _dur = d);
     });
-    _player.onPlayerComplete.listen((_) {
+
+    _audioPlayer!.onPlayerComplete.listen((_) {
       if (!mounted) return;
-      
+
       setState(() {
         _playing = false;
         _completed = true;
         _pos = Duration.zero;
       });
     });
-    _loadAndPlay();
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    _audioPlayer?.dispose();
     super.dispose();
   }
 
@@ -119,6 +128,7 @@ class _PlayerPageState extends State<PlayerPage> {
       return;
     }
 
+    _initializePlayer();
     final folderName = p.basename(file.parent.path);
     final underscoreIdx = folderName.indexOf('_');
 
@@ -137,7 +147,7 @@ class _PlayerPageState extends State<PlayerPage> {
     });
 
     final startOffset = widget.prefs.getInt('playbackStartOffset') ?? 0;
-    await _player.play(
+    await _audioPlayer!.play(
       DeviceFileSource(file.path),
       position: Duration(seconds: startOffset),
     );
@@ -145,7 +155,7 @@ class _PlayerPageState extends State<PlayerPage> {
 
   Future<void> _seekRelative(int seconds) async {
     final newPos = _pos + Duration(seconds: seconds);
-    await _player.seek(newPos < Duration.zero ? Duration.zero : newPos);
+    await _audioPlayer!.seek(newPos < Duration.zero ? Duration.zero : newPos);
   }
 
   Future<void> _scanAndPlay() async {
@@ -187,15 +197,15 @@ class _PlayerPageState extends State<PlayerPage> {
 
   Future<void> _togglePlayPause() async {
     if (_playing) {
-      await _player.pause();
+      await _audioPlayer!.pause();
       return;
     }
     if (_file == null) return;
     if (_completed) {
-      await _player.play(DeviceFileSource(_file!.path));
+      await _audioPlayer!.play(DeviceFileSource(_file!.path));
       return;
     }
-    await _player.resume();
+    await _audioPlayer!.resume();
   }
 
   String _formatBytes(int bytes, int decimals) {
@@ -417,7 +427,7 @@ class _PlayerPageState extends State<PlayerPage> {
           value: curMs,
           max: maxMs > 0 ? maxMs : 1.0,
           onChanged: maxMs > 0
-              ? (v) => _player.seek(Duration(milliseconds: v.toInt()))
+              ? (v) => _audioPlayer!.seek(Duration(milliseconds: v.toInt()))
               : null,
         ),
         Padding(
