@@ -14,12 +14,15 @@ import 'package:qr_jukebox/services/track_file_finder.dart';
 import 'package:qr_jukebox/utils/fmt.dart';
 import 'package:qr_jukebox/utils/track_url_parser.dart';
 
+typedef AudioPlayerFactory = AudioPlayer Function();
+
 class PlayerPage extends StatefulWidget {
   final ParsedTrackUrl parsed;
   final String mediaRoot;
   final SharedPreferences prefs;
   final TrackFileFinder trackFileFinder;
   final bool animatedTitle;
+  final AudioPlayerFactory audioPlayerFactory;
 
   const PlayerPage({
     super.key,
@@ -27,6 +30,7 @@ class PlayerPage extends StatefulWidget {
     required this.mediaRoot,
     required this.prefs,
     this.trackFileFinder = findTrackFile,
+    this.audioPlayerFactory = AudioPlayer.new,
     this.animatedTitle = true,
   });
 
@@ -58,7 +62,7 @@ class _PlayerPageState extends State<PlayerPage> {
   void _initializePlayer() {
     if (_audioPlayer != null) return;
 
-    _audioPlayer = AudioPlayer();
+    _audioPlayer = widget.audioPlayerFactory();
 
     _audioPlayer!.onPlayerStateChanged.listen((s) {
       if (mounted) {
@@ -141,7 +145,6 @@ class _PlayerPageState extends State<PlayerPage> {
 
     setState(() {
       _file = file;
-      _loading = false;
       _tags = tags;
       _gameName = underscoreIdx != -1
           ? folderName.substring(underscoreIdx + 1)
@@ -149,10 +152,36 @@ class _PlayerPageState extends State<PlayerPage> {
     });
 
     final startOffset = widget.prefs.getInt('playbackStartOffset') ?? 0;
-    await _audioPlayer!.play(
-      DeviceFileSource(file.path),
-      position: Duration(seconds: startOffset),
-    );
+
+    try {
+      await _audioPlayer!.play(
+        DeviceFileSource(file.path),
+        position: Duration(seconds: startOffset),
+      );
+
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to play audio file: $e');
+      final failedPlayer = _audioPlayer;
+      _audioPlayer = null;
+
+      try {
+        await failedPlayer?.dispose();
+      } catch (disposeError) {
+        debugPrint('Failed to dispose audio player: $disposeError');
+      }
+      if (!mounted) return;
+
+      setState(() {
+        _error = 'The audio file could not be played.\n\n'
+            'The file may be damaged or in an unsupported format.';
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _seekRelative(int seconds) async {
