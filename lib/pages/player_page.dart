@@ -6,23 +6,32 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p;
-import 'package:marquee/marquee.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
+import 'package:qr_jukebox/widgets/player_error_view.dart';
+import 'package:qr_jukebox/widgets/player_title.dart';
 import 'package:qr_jukebox/pages/scanner_page.dart';
 import 'package:qr_jukebox/services/track_file_finder.dart';
 import 'package:qr_jukebox/utils/fmt.dart';
 import 'package:qr_jukebox/utils/track_url_parser.dart';
 
+typedef AudioPlayerFactory = AudioPlayer Function();
+
 class PlayerPage extends StatefulWidget {
   final ParsedTrackUrl parsed;
   final String mediaRoot;
   final SharedPreferences prefs;
+  final TrackFileFinder trackFileFinder;
+  final bool animatedTitle;
+  final AudioPlayerFactory audioPlayerFactory;
 
   const PlayerPage({
     super.key,
     required this.parsed,
     required this.mediaRoot,
     required this.prefs,
+    this.trackFileFinder = findTrackFile,
+    this.audioPlayerFactory = AudioPlayer.new,
+    this.animatedTitle = true,
   });
 
   @override
@@ -30,7 +39,7 @@ class PlayerPage extends StatefulWidget {
 }
 
 class _PlayerPageState extends State<PlayerPage> {
-  final _player = AudioPlayer();
+  AudioPlayer? _audioPlayer;
 
   File? _file;
   AudioMetadata? _tags;
@@ -47,7 +56,15 @@ class _PlayerPageState extends State<PlayerPage> {
   void initState() {
     super.initState();
     _stopwatch.start();
-    _player.onPlayerStateChanged.listen((s) {
+    _loadAndPlay();
+  }
+
+  void _initializePlayer() {
+    if (_audioPlayer != null) return;
+
+    _audioPlayer = widget.audioPlayerFactory();
+
+    _audioPlayer!.onPlayerStateChanged.listen((s) {
       if (mounted) {
         setState(() {
           _playing = s == PlayerState.playing;
@@ -56,27 +73,28 @@ class _PlayerPageState extends State<PlayerPage> {
       }
     });
 
-    _player.onPositionChanged.listen((d) {
+    _audioPlayer!.onPositionChanged.listen((d) {
       if (mounted) setState(() => _pos = d);
     });
-    _player.onDurationChanged.listen((d) {
+
+    _audioPlayer!.onDurationChanged.listen((d) {
       if (mounted) setState(() => _dur = d);
     });
-    _player.onPlayerComplete.listen((_) {
+
+    _audioPlayer!.onPlayerComplete.listen((_) {
       if (!mounted) return;
-      
+
       setState(() {
         _playing = false;
         _completed = true;
         _pos = Duration.zero;
       });
     });
-    _loadAndPlay();
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    _audioPlayer?.dispose();
     super.dispose();
   }
 
@@ -95,7 +113,7 @@ class _PlayerPageState extends State<PlayerPage> {
         return;
       }
     }
-    final file = await findTrackFile(
+    final file = await widget.trackFileFinder(
       mediaRoot: widget.mediaRoot,
       host: widget.parsed.host,
       folders: widget.parsed.folders,
@@ -116,6 +134,7 @@ class _PlayerPageState extends State<PlayerPage> {
       return;
     }
 
+    _initializePlayer();
     final folderName = p.basename(file.parent.path);
     final underscoreIdx = folderName.indexOf('_');
 
@@ -126,7 +145,6 @@ class _PlayerPageState extends State<PlayerPage> {
 
     setState(() {
       _file = file;
-      _loading = false;
       _tags = tags;
       _gameName = underscoreIdx != -1
           ? folderName.substring(underscoreIdx + 1)
@@ -134,15 +152,41 @@ class _PlayerPageState extends State<PlayerPage> {
     });
 
     final startOffset = widget.prefs.getInt('playbackStartOffset') ?? 0;
-    await _player.play(
-      DeviceFileSource(file.path),
-      position: Duration(seconds: startOffset),
-    );
+
+    try {
+      await _audioPlayer!.play(
+        DeviceFileSource(file.path),
+        position: Duration(seconds: startOffset),
+      );
+
+      if (mounted) {
+        setState(() {
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to play audio file: $e');
+      final failedPlayer = _audioPlayer;
+      _audioPlayer = null;
+
+      try {
+        await failedPlayer?.dispose();
+      } catch (disposeError) {
+        debugPrint('Failed to dispose audio player: $disposeError');
+      }
+      if (!mounted) return;
+
+      setState(() {
+        _error = 'The audio file could not be played.\n\n'
+            'The file may be damaged or in an unsupported format.';
+        _loading = false;
+      });
+    }
   }
 
   Future<void> _seekRelative(int seconds) async {
     final newPos = _pos + Duration(seconds: seconds);
-    await _player.seek(newPos < Duration.zero ? Duration.zero : newPos);
+    await _audioPlayer!.seek(newPos < Duration.zero ? Duration.zero : newPos);
   }
 
   Future<void> _scanAndPlay() async {
@@ -184,15 +228,15 @@ class _PlayerPageState extends State<PlayerPage> {
 
   Future<void> _togglePlayPause() async {
     if (_playing) {
-      await _player.pause();
+      await _audioPlayer!.pause();
       return;
     }
     if (_file == null) return;
     if (_completed) {
-      await _player.play(DeviceFileSource(_file!.path));
+      await _audioPlayer!.play(DeviceFileSource(_file!.path));
       return;
     }
-    await _player.resume();
+    await _audioPlayer!.resume();
   }
 
   String _formatBytes(int bytes, int decimals) {
@@ -294,31 +338,9 @@ class _PlayerPageState extends State<PlayerPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: cs.inversePrimary,
-        title: Row(
-          children: [            
-            Expanded(
-              child: SizedBox(
-                height: 24,
-                child: Marquee(
-                  text: '#$trackDisplay  ·  ${_gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')}',
-                  style: Theme.of(context).appBarTheme.titleTextStyle ?? 
-                        Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.normal,
-                        ),
-                  scrollAxis: Axis.horizontal,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  blankSpace: 50.0,
-                  velocity: 30.0,
-                  pauseAfterRound: const Duration(seconds: 2),
-                  startPadding: 0.0,
-                  accelerationDuration: const Duration(seconds: 1),
-                  accelerationCurve: Curves.linear,
-                  decelerationDuration: const Duration(milliseconds: 500),
-                  decelerationCurve: Curves.easeOut,
-                ),
-              ),
-            ),
-          ],
+        title: PlayerTitle(
+          text: '#$trackDisplay  ·  ${_gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')}',
+          animated: widget.animatedTitle,
         ),
         actions: [
           IconButton(
@@ -335,37 +357,16 @@ class _PlayerPageState extends State<PlayerPage> {
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? _buildError()
+                  ? PlayerErrorView(
+                      message: _error!,
+                      onRetry: _loadAndPlay,
+                      onScanAgain: _scanAndPlay,
+                    )
                   : _buildPlayer(cs),
         ),
       ),
     );
   }
-
-  Widget _buildError() => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 72, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _loadAndPlay,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try again'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _scanAndPlay,
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan again'),
-            ),
-          ],
-        ),
-      );
 
   Widget _buildPlayer(ColorScheme cs) {
     final maxMs = _dur.inMilliseconds.toDouble();
@@ -435,7 +436,7 @@ class _PlayerPageState extends State<PlayerPage> {
           value: curMs,
           max: maxMs > 0 ? maxMs : 1.0,
           onChanged: maxMs > 0
-              ? (v) => _player.seek(Duration(milliseconds: v.toInt()))
+              ? (v) => _audioPlayer!.seek(Duration(milliseconds: v.toInt()))
               : null,
         ),
         Padding(
@@ -457,6 +458,7 @@ class _PlayerPageState extends State<PlayerPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
+              key: const Key( 'rewindButton'),
               icon: const Icon(Icons.replay_10_rounded),
               onPressed: () => _seekRelative(-10),
               iconSize: 32,
@@ -464,6 +466,7 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             const SizedBox(width: 16),
             FilledButton(
+              key: const Key( 'playPauseButton'),
               onPressed: _togglePlayPause,
               style: FilledButton.styleFrom(
                 shape: const CircleBorder(),
@@ -476,6 +479,7 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             const SizedBox(width: 16),
             IconButton(
+              key: const Key( 'forwardButton'),
               icon: const Icon(Icons.forward_10_rounded),
               onPressed: () => _seekRelative(10),
               iconSize: 32,
