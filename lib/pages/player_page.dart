@@ -6,9 +6,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p;
-import 'package:marquee/marquee.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:qr_jukebox/widgets/player_error_view.dart';
+import 'package:qr_jukebox/widgets/player_title.dart';
 import 'package:qr_jukebox/pages/scanner_page.dart';
 import 'package:qr_jukebox/services/track_file_finder.dart';
 import 'package:qr_jukebox/utils/fmt.dart';
@@ -19,6 +19,7 @@ class PlayerPage extends StatefulWidget {
   final String mediaRoot;
   final SharedPreferences prefs;
   final TrackFileFinder trackFileFinder;
+  final bool animatedTitle;
 
   const PlayerPage({
     super.key,
@@ -26,6 +27,7 @@ class PlayerPage extends StatefulWidget {
     required this.mediaRoot,
     required this.prefs,
     this.trackFileFinder = findTrackFile,
+    this.animatedTitle = true,
   });
 
   @override
@@ -307,31 +309,9 @@ class _PlayerPageState extends State<PlayerPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: cs.inversePrimary,
-        title: Row(
-          children: [            
-            Expanded(
-              child: SizedBox(
-                height: 24,
-                child: Marquee(
-                  text: '#$trackDisplay  ·  ${_gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')}',
-                  style: Theme.of(context).appBarTheme.titleTextStyle ?? 
-                        Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.normal,
-                        ),
-                  scrollAxis: Axis.horizontal,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  blankSpace: 50.0,
-                  velocity: 30.0,
-                  pauseAfterRound: const Duration(seconds: 2),
-                  startPadding: 0.0,
-                  accelerationDuration: const Duration(seconds: 1),
-                  accelerationCurve: Curves.linear,
-                  decelerationDuration: const Duration(milliseconds: 500),
-                  decelerationCurve: Curves.easeOut,
-                ),
-              ),
-            ),
-          ],
+        title: PlayerTitle(
+          text: '#$trackDisplay  ·  ${_gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')}',
+          animated: widget.animatedTitle,
         ),
         actions: [
           IconButton(
