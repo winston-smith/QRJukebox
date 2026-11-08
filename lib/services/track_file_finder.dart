@@ -1,6 +1,13 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 
+typedef TrackFileFinder = Future<File?> Function({
+  required String mediaRoot,
+  required String host,
+  required List<String> folders,
+  required String trackId,
+});
+
 /// Resolves the local audio file by traversing the folder structure.
 Future<File?> findTrackFile({
   required String mediaRoot,

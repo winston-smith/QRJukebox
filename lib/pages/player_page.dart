@@ -18,12 +18,14 @@ class PlayerPage extends StatefulWidget {
   final ParsedTrackUrl parsed;
   final String mediaRoot;
   final SharedPreferences prefs;
+  final TrackFileFinder trackFileFinder;
 
   const PlayerPage({
     super.key,
     required this.parsed,
     required this.mediaRoot,
     required this.prefs,
+    this.trackFileFinder = findTrackFile,
   });
 
   @override
@@ -96,7 +98,7 @@ class _PlayerPageState extends State<PlayerPage> {
         return;
       }
     }
-    final file = await findTrackFile(
+    final file = await widget.trackFileFinder(
       mediaRoot: widget.mediaRoot,
       host: widget.parsed.host,
       folders: widget.parsed.folders,
