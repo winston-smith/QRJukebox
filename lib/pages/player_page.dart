@@ -458,6 +458,7 @@ class _PlayerPageState extends State<PlayerPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
+              key: const Key( 'rewindButton'),
               icon: const Icon(Icons.replay_10_rounded),
               onPressed: () => _seekRelative(-10),
               iconSize: 32,
@@ -465,6 +466,7 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             const SizedBox(width: 16),
             FilledButton(
+              key: const Key( 'playPauseButton'),
               onPressed: _togglePlayPause,
               style: FilledButton.styleFrom(
                 shape: const CircleBorder(),
@@ -477,6 +479,7 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             const SizedBox(width: 16),
             IconButton(
+              key: const Key( 'forwardButton'),
               icon: const Icon(Icons.forward_10_rounded),
               onPressed: () => _seekRelative(10),
               iconSize: 32,
