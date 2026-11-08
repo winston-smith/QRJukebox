@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p;
 import 'package:marquee/marquee.dart';
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
+import 'package:qr_jukebox/widgets/player_error_view.dart';
 import 'package:qr_jukebox/pages/scanner_page.dart';
 import 'package:qr_jukebox/services/track_file_finder.dart';
 import 'package:qr_jukebox/utils/fmt.dart';
@@ -335,37 +336,16 @@ class _PlayerPageState extends State<PlayerPage> {
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? _buildError()
+                  ? PlayerErrorView(
+                      message: _error!,
+                      onRetry: _loadAndPlay,
+                      onScanAgain: _scanAndPlay,
+                    )
                   : _buildPlayer(cs),
         ),
       ),
     );
   }
-
-  Widget _buildError() => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, size: 72, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(_error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red)),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _loadAndPlay,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try again'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _scanAndPlay,
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan again'),
-            ),
-          ],
-        ),
-      );
 
   Widget _buildPlayer(ColorScheme cs) {
     final maxMs = _dur.inMilliseconds.toDouble();
