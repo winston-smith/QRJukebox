@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p;
@@ -14,23 +15,21 @@ import 'package:qr_jukebox/services/track_file_finder.dart';
 import 'package:qr_jukebox/utils/fmt.dart';
 import 'package:qr_jukebox/utils/track_url_parser.dart';
 
-typedef AudioPlayerFactory = AudioPlayer Function();
-
 class PlayerPage extends StatefulWidget {
   final ParsedTrackUrl parsed;
   final String mediaRoot;
   final SharedPreferences prefs;
   final TrackFileFinder trackFileFinder;
   final bool animatedTitle;
-  final AudioPlayerFactory audioPlayerFactory;
+  final AudioPlaybackService audioPlaybackService;
 
   const PlayerPage({
     super.key,
     required this.parsed,
     required this.mediaRoot,
     required this.prefs,
+    required this.audioPlaybackService,
     this.trackFileFinder = findTrackFile,
-    this.audioPlayerFactory = AudioPlayer.new,
     this.animatedTitle = true,
   });
 
@@ -39,8 +38,6 @@ class PlayerPage extends StatefulWidget {
 }
 
 class _PlayerPageState extends State<PlayerPage> {
-  AudioPlayer? _audioPlayer;
-
   File? _file;
   AudioMetadata? _tags;
   bool _loading = true;
@@ -52,36 +49,45 @@ class _PlayerPageState extends State<PlayerPage> {
   Duration _dur = Duration.zero;
   final Stopwatch _stopwatch = Stopwatch();
 
+  StreamSubscription<bool>? _playingSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<void>? _completedSubscription;
+
   @override
   void initState() {
     super.initState();
-    _stopwatch.start();
-    _loadAndPlay();
-  }
 
-  void _initializePlayer() {
-    if (_audioPlayer != null) return;
+    _playingSubscription =
+        widget.audioPlaybackService.playing.listen((playing) {
+      if (!mounted) return;
 
-    _audioPlayer = widget.audioPlayerFactory();
-
-    _audioPlayer!.onPlayerStateChanged.listen((s) {
-      if (mounted) {
-        setState(() {
-          _playing = s == PlayerState.playing;
-          if (_playing) _completed = false;
-        });
-      }
+      setState(() {
+        _playing = playing;
+        if (playing) _completed = false;
+      });
     });
 
-    _audioPlayer!.onPositionChanged.listen((d) {
-      if (mounted) setState(() => _pos = d);
+    _positionSubscription =
+        widget.audioPlaybackService.position.listen((position) {
+      if (!mounted) return;
+
+      setState(() {
+        _pos = position;
+      });
     });
 
-    _audioPlayer!.onDurationChanged.listen((d) {
-      if (mounted) setState(() => _dur = d);
+    _durationSubscription =
+        widget.audioPlaybackService.duration.listen((duration) {
+      if (!mounted) return;
+
+      setState(() {
+        _dur = duration;
+      });
     });
 
-    _audioPlayer!.onPlayerComplete.listen((_) {
+    _completedSubscription =
+        widget.audioPlaybackService.completed.listen((_) {
       if (!mounted) return;
 
       setState(() {
@@ -90,11 +96,18 @@ class _PlayerPageState extends State<PlayerPage> {
         _pos = Duration.zero;
       });
     });
+
+    _stopwatch.start();
+    _loadAndPlay();
   }
 
   @override
   void dispose() {
-    _audioPlayer?.dispose();
+    _playingSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _durationSubscription?.cancel();
+    _completedSubscription?.cancel();
+
     super.dispose();
   }
 
@@ -134,7 +147,6 @@ class _PlayerPageState extends State<PlayerPage> {
       return;
     }
 
-    _initializePlayer();
     final folderName = p.basename(file.parent.path);
     final underscoreIdx = folderName.indexOf('_');
 
@@ -154,8 +166,8 @@ class _PlayerPageState extends State<PlayerPage> {
     final startOffset = widget.prefs.getInt('playbackStartOffset') ?? 0;
 
     try {
-      await _audioPlayer!.play(
-        DeviceFileSource(file.path),
+      await widget.audioPlaybackService.play(
+        file.path,
         position: Duration(seconds: startOffset),
       );
 
@@ -166,14 +178,7 @@ class _PlayerPageState extends State<PlayerPage> {
       }
     } catch (e) {
       debugPrint('Failed to play audio file: $e');
-      final failedPlayer = _audioPlayer;
-      _audioPlayer = null;
 
-      try {
-        await failedPlayer?.dispose();
-      } catch (disposeError) {
-        debugPrint('Failed to dispose audio player: $disposeError');
-      }
       if (!mounted) return;
 
       setState(() {
@@ -186,7 +191,7 @@ class _PlayerPageState extends State<PlayerPage> {
 
   Future<void> _seekRelative(int seconds) async {
     final newPos = _pos + Duration(seconds: seconds);
-    await _audioPlayer!.seek(newPos < Duration.zero ? Duration.zero : newPos);
+    await widget.audioPlaybackService.seek(newPos < Duration.zero ? Duration.zero : newPos);
   }
 
   Future<void> _scanAndPlay() async {
@@ -209,6 +214,7 @@ class _PlayerPageState extends State<PlayerPage> {
             parsed: parsed,
             mediaRoot: widget.mediaRoot,
             prefs: widget.prefs,
+            audioPlaybackService: widget.audioPlaybackService,
           ),
         ),
       );
@@ -228,15 +234,15 @@ class _PlayerPageState extends State<PlayerPage> {
 
   Future<void> _togglePlayPause() async {
     if (_playing) {
-      await _audioPlayer!.pause();
+      await widget.audioPlaybackService.pause();
       return;
     }
     if (_file == null) return;
     if (_completed) {
-      await _audioPlayer!.play(DeviceFileSource(_file!.path));
+      await widget.audioPlaybackService.play(_file!.path);
       return;
     }
-    await _audioPlayer!.resume();
+    await widget.audioPlaybackService.resume();
   }
 
   String _formatBytes(int bytes, int decimals) {
@@ -436,7 +442,7 @@ class _PlayerPageState extends State<PlayerPage> {
           value: curMs,
           max: maxMs > 0 ? maxMs : 1.0,
           onChanged: maxMs > 0
-              ? (v) => _audioPlayer!.seek(Duration(milliseconds: v.toInt()))
+              ? (v) => widget.audioPlaybackService.seek(Duration(milliseconds: v.toInt()))
               : null,
         ),
         Padding(

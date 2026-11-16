@@ -1,5 +1,8 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_jukebox/infrastructure/audioplayers_audio_playback_service.dart';
+import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'pages/home_page.dart';
@@ -19,15 +22,35 @@ void main() async {
   final keepAwake = prefs.getBool('keepAwake') ?? true;
   WakelockPlus.toggle(enable: keepAwake);
   
-  runApp(QRJukeboxApp(prefs: prefs));
+  final audioPlaybackService = AudioplayersAudioPlaybackService(
+    () => AudioPlayer(),
+  );
+
+  runApp(QRJukeboxApp(
+    prefs: prefs,
+    audioPlaybackService: audioPlaybackService,
+  ));
 }
 
 // ─── App Root ──────────────────────────────────────────────────────────────
 
-class QRJukeboxApp extends StatelessWidget {
-  final SharedPreferences prefs;
-  const QRJukeboxApp({super.key, required this.prefs});
 
+class QRJukeboxApp extends StatefulWidget {
+  final SharedPreferences prefs;
+  final AudioPlaybackService audioPlaybackService;
+
+  const QRJukeboxApp({
+    super.key,
+    required this.prefs,
+    required this.audioPlaybackService,
+  });
+
+  @override
+  State<QRJukeboxApp> createState() => _QRJukeboxAppState();
+}
+
+
+class _QRJukeboxAppState extends State<QRJukeboxApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -39,7 +62,16 @@ class QRJukeboxApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: HomePage(prefs: prefs),
+      home: HomePage(
+        prefs: widget.prefs,
+        audioPlaybackService: widget.audioPlaybackService,
+      ),
     );
+  }
+
+  @override
+  void dispose() {
+    widget.audioPlaybackService.dispose();
+    super.dispose();
   }
 }

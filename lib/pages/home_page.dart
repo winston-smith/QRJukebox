@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as p;
 import 'package:qr_jukebox/pages/player_page.dart';
@@ -8,7 +9,13 @@ import 'package:qr_jukebox/utils/track_url_parser.dart';
 
 class HomePage extends StatefulWidget {
   final SharedPreferences prefs;
-  const HomePage({super.key, required this.prefs});
+  final AudioPlaybackService audioPlaybackService;
+
+  const HomePage( {
+    super.key,
+    required this.prefs,
+    required this.audioPlaybackService,
+  } );
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -42,6 +49,7 @@ class _HomePageState extends State<HomePage> {
           parsed: parsed,
           mediaRoot: _mediaRoot,
           prefs: widget.prefs,
+          audioPlaybackService: widget.audioPlaybackService,
         ),
       ),
     );
