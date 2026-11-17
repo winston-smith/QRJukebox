@@ -11,6 +11,8 @@ abstract interface class AudioPlaybackService {
 
   Future<void> seek(Duration position);
 
+  Future<void> stop();
+
   Stream<bool> get playing;
 
   Stream<Duration> get position;

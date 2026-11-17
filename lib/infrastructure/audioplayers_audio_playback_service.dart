@@ -103,6 +103,11 @@ class AudioplayersAudioPlaybackService implements AudioPlaybackService{
     await _player?.seek(position);
   }
 
+  @override
+  Future<void> stop() async {
+    await _player?.stop();
+  }
+
   Future<void> _disposePlayer() async {
     await _playerStateSubscription?.cancel();
     await _positionSubscription?.cancel();

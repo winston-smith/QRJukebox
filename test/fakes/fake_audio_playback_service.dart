@@ -15,6 +15,9 @@ class FakeAudioPlaybackService implements AudioPlaybackService {
   final StreamController<void> _completedController =
       StreamController<void>.broadcast();
 
+  final StreamController<String> _playCallsController =
+      StreamController<String>.broadcast();
+
   final List<Completer<void>> playCompleters = [];
   final List<String> playedFiles = [];
   final List<Duration> playPositions = [];
@@ -22,7 +25,11 @@ class FakeAudioPlaybackService implements AudioPlaybackService {
   int pauseCalls = 0;
   int resumeCalls = 0;
   int seekCalls = 0;
+  int stopCalls = 0;
+
   Duration? lastSeekPosition;
+
+  Stream<String> get playCalls => _playCallsController.stream;
 
   @override
   Stream<bool> get playing => _playingController.stream;
@@ -43,6 +50,7 @@ class FakeAudioPlaybackService implements AudioPlaybackService {
   }) async {
     playedFiles.add(filePath);
     playPositions.add(position);
+    _playCallsController.add(filePath);
 
     final completer = Completer<void>();
     playCompleters.add(completer);
@@ -71,10 +79,19 @@ class FakeAudioPlaybackService implements AudioPlaybackService {
   }
 
   @override
+  Future<void> stop() async {
+    stopCalls++;
+    lastSeekPosition = Duration.zero;
+    _positionController.add(Duration.zero);
+    _playingController.add(false);
+  }
+
+  @override
   Future<void> dispose() async {
     await _playingController.close();
     await _positionController.close();
     await _durationController.close();
     await _completedController.close();
+    await _playCallsController.close();
   }
 }

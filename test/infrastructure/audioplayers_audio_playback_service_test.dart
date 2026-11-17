@@ -57,6 +57,9 @@ void main() {
     when(() => mockPlayer.seek(any()))
         .thenAnswer((_) async {});
 
+    when(() => mockPlayer.stop())
+        .thenAnswer((_) async {});
+
     when(() => mockPlayer.dispose())
         .thenAnswer((_) async {});
   });
@@ -273,6 +276,19 @@ void main() {
 
       await service.dispose();
     });
+
+  test('stops playback', () async {
+    final service = AudioplayersAudioPlaybackService(
+      () => mockPlayer,
+    );
+
+    await service.play('/music/test.mp3');
+    await service.stop();
+
+    verify(() => mockPlayer.stop()).called(1);
+
+    await service.dispose();
+  });
 
     test('seeks to the specified position', () async {
       final service = AudioplayersAudioPlaybackService(

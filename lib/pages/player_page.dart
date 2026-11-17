@@ -15,6 +15,8 @@ import 'package:qr_jukebox/services/track_file_finder.dart';
 import 'package:qr_jukebox/utils/fmt.dart';
 import 'package:qr_jukebox/utils/track_url_parser.dart';
 
+typedef ScannerBuilder = Widget Function();
+
 class PlayerPage extends StatefulWidget {
   final ParsedTrackUrl parsed;
   final String mediaRoot;
@@ -22,6 +24,7 @@ class PlayerPage extends StatefulWidget {
   final TrackFileFinder trackFileFinder;
   final bool animatedTitle;
   final AudioPlaybackService audioPlaybackService;
+  final ScannerBuilder scannerBuilder;
 
   const PlayerPage({
     super.key,
@@ -31,7 +34,10 @@ class PlayerPage extends StatefulWidget {
     required this.audioPlaybackService,
     this.trackFileFinder = findTrackFile,
     this.animatedTitle = true,
+    this.scannerBuilder = _defaultScannerBuilder,
   });
+
+  static Widget _defaultScannerBuilder() => const ScannerPage();
 
   @override
   State<PlayerPage> createState() => _PlayerPageState();
@@ -133,6 +139,9 @@ class _PlayerPageState extends State<PlayerPage> {
       trackId: widget.parsed.trackId,
     );
 
+    // Neuer Track wurde gefunden: bisherige Wiedergabe beenden.
+    await widget.audioPlaybackService.stop();
+
     if (!mounted) return;
 
     if (file == null) {
@@ -197,7 +206,7 @@ class _PlayerPageState extends State<PlayerPage> {
   Future<void> _scanAndPlay() async {
     final result = await Navigator.push<String>(
       context,
-      MaterialPageRoute(builder: (_) => const ScannerPage()),
+      MaterialPageRoute(builder: (_) => widget.scannerBuilder()),
     );
     if (result != null && mounted) {
       final parsed = parseUrl(result);
@@ -215,6 +224,9 @@ class _PlayerPageState extends State<PlayerPage> {
             mediaRoot: widget.mediaRoot,
             prefs: widget.prefs,
             audioPlaybackService: widget.audioPlaybackService,
+            trackFileFinder: widget.trackFileFinder,
+            scannerBuilder: widget.scannerBuilder,
+            animatedTitle: widget.animatedTitle,
           ),
         ),
       );
@@ -384,6 +396,7 @@ class _PlayerPageState extends State<PlayerPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         GestureDetector(
+          key: const Key('scan-again'),
           onTap: _scanAndPlay,
           child: Container(
             width: 200,
