@@ -1,318 +1,416 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_jukebox/pages/player_page.dart';
 import 'package:qr_jukebox/widgets/player_error_view.dart';
-import 'package:audioplayers/audioplayers.dart';
 
-class FakeAudioPlayer implements AudioPlayer {
-  final Completer<void> playCompleter = Completer<void>();
+import '../fakes/fake_audio_playback_service.dart';
 
-  final StreamController<PlayerState> playerStateController =
-      StreamController<PlayerState>.broadcast();
-
-  int pauseCalls = 0;
-  int resumeCalls = 0;
-  int disposeCalls = 0;
+class FakeScannerPage extends StatelessWidget {
+  const FakeScannerPage({super.key});
 
   @override
-  Stream<PlayerState> get onPlayerStateChanged => playerStateController.stream;
-
-  @override
-  Stream<Duration> get onPositionChanged => const Stream.empty();
-
-  @override
-  Stream<Duration> get onDurationChanged => const Stream.empty();
-
-  @override
-  Stream<void> get onPlayerComplete => const Stream.empty();
-
-  @override
-  Future<void> play(
-    Source source, {
-    double? volume,
-    double? balance,
-    AudioContext? ctx,
-    Duration? position,
-    PlayerMode? mode,
-  }) async {
-    await playCompleter.future;
-    playerStateController.add(PlayerState.playing);
-  }
-
-  @override
-  Future<void> pause() async {
-    pauseCalls++;
-    playerStateController.add(PlayerState.paused);
-  }
-
-  @override
-  Future<void> resume() async {
-    resumeCalls++;
-    playerStateController.add(PlayerState.playing);
-  }
-
-  @override
-  Future<void> dispose() async {
-    disposeCalls++;
-    await playerStateController.close();
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) {
-    return super.noSuchMethod(invocation);
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: ElevatedButton(
+        key: const Key('simulate-scan'),
+        onPressed: () {
+          Navigator.pop(
+            context,
+            'https://www.example.com/de/00002',
+          );
+        },
+        child: const Text('Simulate scan'),
+      ),
+    );
   }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
-  });
+  group('Player Page', () {
 
-  testWidgets('shows the player when playback succeeds', (tester) async {
-    final fakePlayer = FakeAudioPlayer();
-    tester.view.physicalSize = const Size(1080, 1920);
-    tester.view.devicePixelRatio = 1.0;
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+    });
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PlayerPage(
-          parsed: (
-            host: 'www.hitstergame.com',
-            folders: ['de'],
-            trackId: '00001',
+    testWidgets('shows the player when playback succeeds', (tester) async {
+      final fakeService = FakeAudioPlaybackService();
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            parsed: (
+              host: 'www.hitstergame.com',
+              folders: ['de'],
+              trackId: '00001',
+            ),
+            mediaRoot: '/unused',
+            prefs: await SharedPreferences.getInstance(),
+            trackFileFinder: ({
+              required mediaRoot,
+              required host,
+              required folders,
+              required trackId,
+            }) async =>
+                File('/unused/00001_test.mp3'),
+            audioPlaybackService: fakeService,
+            animatedTitle: false,
           ),
-          mediaRoot: '/unused',
-          prefs: await SharedPreferences.getInstance(),
-          trackFileFinder: ({
-            required mediaRoot,
-            required host,
-            required folders,
-            required trackId,
-          }) async =>
-              File('/unused/00001_test.mp3'),
-          audioPlayerFactory: () => fakePlayer,
-          animatedTitle: false,
         ),
-      ),
-    );
+      );
 
-    // Playback is still pending.
-    await tester.pump();
+      // Playback is still pending.
+      await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    // Playback succeeds.
-    fakePlayer.playCompleter.complete();
-    await tester.pumpAndSettle();
+      // Playback succeeds.
+      fakeService.playCompleters[0].complete();
+      await tester.pumpAndSettle();
 
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.byType(PlayerErrorView), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(PlayerErrorView), findsNothing);
 
-    // Verify that the player UI is displayed.
-    expect(find.text('unused'), findsOneWidget);
+      // Verify that the player UI is displayed.
+      expect(find.text('unused'), findsOneWidget);
+      expect( fakeService.playedFiles, ['/unused/00001_test.mp3']);
 
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-  });
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(fakeService.dispose);
+    });
 
-  testWidgets('allows to pause and resume playback', (tester) async {
-    final fakePlayer = FakeAudioPlayer();
-    tester.view.physicalSize = const Size(1080, 1920);
-    tester.view.devicePixelRatio = 1.0;
+    testWidgets('allows to pause and resume playback', (tester) async {
+      final fakeService = FakeAudioPlaybackService();
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PlayerPage(
-          parsed: (
-            host: 'www.hitstergame.com',
-            folders: ['de'],
-            trackId: '00001',
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            parsed: (
+              host: 'www.hitstergame.com',
+              folders: ['de'],
+              trackId: '00001',
+            ),
+            mediaRoot: '/unused',
+            prefs: await SharedPreferences.getInstance(),
+            trackFileFinder: ({
+              required mediaRoot,
+              required host,
+              required folders,
+              required trackId,
+            }) async =>
+                File('/unused/00001_test.mp3'),
+            audioPlaybackService: fakeService,
+            animatedTitle: false,
           ),
-          mediaRoot: '/unused',
-          prefs: await SharedPreferences.getInstance(),
-          trackFileFinder: ({
-            required mediaRoot,
-            required host,
-            required folders,
-            required trackId,
-          }) async =>
-              File('/unused/00001_test.mp3'),
-          audioPlayerFactory: () => fakePlayer,
-          animatedTitle: false,
         ),
-      ),
-    );
+      );
 
-    await tester.pump();
-    fakePlayer.playCompleter.complete();
-    await tester.pumpAndSettle();
+      await tester.pump();
+      fakeService.playCompleters[0].complete();
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('playPauseButton')));
-    await tester.pump();
+      await tester.tap(find.byKey(const Key('playPauseButton')));
+      await tester.pump();
 
-    // Assert:
-    expect(fakePlayer.pauseCalls, 1);
-    expect(fakePlayer.resumeCalls, 0);
+      // Assert:
+      expect(fakeService.pauseCalls, 1);
+      expect(fakeService.resumeCalls, 0);
 
-    await tester.tap(find.byKey(const Key('playPauseButton')));
-    await tester.pump();
+      await tester.tap(find.byKey(const Key('playPauseButton')));
+      await tester.pump();
 
-    // Assert:
-    expect(fakePlayer.pauseCalls, 1);
-    expect(fakePlayer.resumeCalls, 1);
+      // Assert:
+      expect(fakeService.pauseCalls, 1);
+      expect(fakeService.resumeCalls, 1);
 
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-  });
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(fakeService.dispose);
+    });
 
-  testWidgets('displays error when track cannot be found', (tester) async {
-    const parsed = (
-      host: 'www.hitstergame.com',
-      folders: ['de'],
-      trackId: '00001',
-    );
+    testWidgets('scans again and plays the newly scanned track', (
+      tester,
+    ) async {
+      final fakeService = FakeAudioPlaybackService();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PlayerPage(
-          parsed: parsed,
-          mediaRoot: '/unused',
-          prefs: await SharedPreferences.getInstance(),
-          trackFileFinder: ({
-            required mediaRoot,
-            required host,
-            required folders,
-            required trackId,
-          }) async {
-            return null;
-          },
-          animatedTitle: false,
-        ),
-      ),
-    );
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
 
-    // Process the asynchronous track lookup and resulting setState.
-    await tester.pump();
-    await tester.pump();
-
-    expect(find.byType(PlayerErrorView), findsOneWidget);
-    expect(find.textContaining('Track not found.'), findsOneWidget);
-    expect(find.text('Try again'), findsOneWidget);
-    expect(find.text('Scan again'), findsOneWidget);
-  });
-
-  testWidgets('shows an error when the audio file cannot be played',
-      (tester) async {
-    final fakePlayer = FakeAudioPlayer();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PlayerPage(
-          parsed: (
-            host: 'www.hitstergame.com',
-            folders: ['de'],
-            trackId: '00001',
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            parsed: (
+              host: 'www.hitstergame.com',
+              folders: ['de'],
+              trackId: '00001',
+            ),
+            mediaRoot: '/unused',
+            prefs: await SharedPreferences.getInstance(),
+            trackFileFinder: ({
+              required mediaRoot,
+              required host,
+              required folders,
+              required trackId,
+            }) async => File('/unused/$trackId.mp3'),
+            audioPlaybackService: fakeService,
+            animatedTitle: false,
+            scannerBuilder: () => const FakeScannerPage(),
           ),
-          mediaRoot: '/unused',
-          prefs: await SharedPreferences.getInstance(),
-          trackFileFinder: ({
-            required mediaRoot,
-            required host,
-            required folders,
-            required trackId,
-          }) async =>
-              File('/unused/00001_broken.mp3'),
-          audioPlayerFactory: () => fakePlayer,
-          animatedTitle: false,
         ),
-      ),
-    );
+      );
 
-    await tester.pump();
-    await tester.pump();
+      // Initial track starts.
+      await tester.pump();
 
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(fakeService.playCompleters, hasLength(1));
 
-    // First playback attempt fails.
-    fakePlayer.playCompleter.completeError(
-      StateError('Simulated playback failure'),
-    );
-    await tester.pumpAndSettle();
+      // Complete initial playback.
+      fakeService.playCompleters[0].complete();
+      await tester.pumpAndSettle();
 
-    expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.byType(PlayerErrorView), findsOneWidget);
-    expect(
-      find.textContaining('The audio file could not be played.'),
-      findsOneWidget,
-    );
-    expect(fakePlayer.disposeCalls, 1);
-  });
+      // Open scanner.
+      await tester.tap(find.byKey(const Key('scan-again')));
+      await tester.pumpAndSettle();
 
-  testWidgets('retries playback with a new player after failure',
-      (tester) async {
-    final players = <FakeAudioPlayer>[];
+      expect(find.byType(FakeScannerPage), findsOneWidget);
+      expect(find.text('Simulate scan'), findsOneWidget);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: PlayerPage(
-          parsed: (
-            host: 'www.hitstergame.com',
-            folders: ['de'],
-            trackId: '00001',
+      // Subscribe before triggering the second playback.
+      final secondPlay = fakeService.playCalls.firstWhere(
+        (file) => file == '/unused/00002.mp3',
+      );
+
+      // Simulate scanning a different track.
+      await tester.tap(find.byKey(const Key('simulate-scan')));
+      await tester.pump();
+
+      expect(await secondPlay, '/unused/00002.mp3');
+
+      expect(
+        fakeService.playedFiles,
+        ['/unused/00001.mp3', '/unused/00002.mp3'],
+      );
+    });
+    
+    testWidgets('stops playback when the scanned track cannot be found', (
+      tester,
+    ) async {
+      final fakeService = FakeAudioPlaybackService();
+
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            parsed: (
+              host: 'www.hitstergame.com',
+              folders: ['de'],
+              trackId: '00001',
+            ),
+            mediaRoot: '/unused',
+            prefs: await SharedPreferences.getInstance(),
+            trackFileFinder: ({
+              required mediaRoot,
+              required host,
+              required folders,
+              required trackId,
+            }) async {
+              if (trackId == '00002') {
+                return null;
+              }
+
+              return File('/unused/$trackId.mp3');
+            },
+            audioPlaybackService: fakeService,
+            animatedTitle: false,
+            scannerBuilder: () => const FakeScannerPage(),
           ),
-          mediaRoot: '/unused',
-          prefs: await SharedPreferences.getInstance(),
-          trackFileFinder: ({
-            required mediaRoot,
-            required host,
-            required folders,
-            required trackId,
-          }) async =>
-              File('/unused/00001_broken.mp3'),
-          audioPlayerFactory: () {
-            final player = FakeAudioPlayer();
-            players.add(player);
-            return player;
-          },
-          animatedTitle: false,
         ),
-      ),
-    );
+      );
 
-    // First playback attempt is still pending.
-    await tester.pump();
+      // Initial track starts.
+      await tester.pump();
 
-    expect(players, hasLength(1));
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(fakeService.playCompleters, hasLength(1));
 
-    // First playback attempt fails.
-    players[0].playCompleter.completeError(
-      StateError('Simulated playback failure'),
-    );
-    await tester.pumpAndSettle();
+      // Complete initial playback.
+      fakeService.playCompleters[0].complete();
+      await tester.pumpAndSettle();
 
-    expect(find.byType(PlayerErrorView), findsOneWidget);
-    expect(players[0].disposeCalls, 1);
+      // Open scanner.
+      await tester.tap(find.byKey(const Key('scan-again')));
+      await tester.pumpAndSettle();
 
-    // Retry playback.
-    await tester.tap(find.text('Try again'));
-    await tester.pump();
+      expect(find.byType(FakeScannerPage), findsOneWidget);
 
-    expect(players, hasLength(2));
-    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      // Scan a track that does not exist.
+      await tester.tap(find.byKey(const Key('simulate-scan')));
+      await tester.pumpAndSettle();
 
-    // Second playback attempt also fails.
-    players[1].playCompleter.completeError(
-      StateError('Simulated playback failure'),
-    );
-    await tester.pumpAndSettle();
+      expect(fakeService.stopCalls, 2);
+      expect(fakeService.playedFiles, ['/unused/00001.mp3']);
+    });
 
-    expect(find.byType(PlayerErrorView), findsOneWidget);
-    expect(players[1].disposeCalls, 1);
+    testWidgets('displays error when track cannot be found', (tester) async {
+      final fakeService = FakeAudioPlaybackService();
+      const parsed = (
+        host: 'www.hitstergame.com',
+        folders: ['de'],
+        trackId: '00001',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            parsed: parsed,
+            mediaRoot: '/unused',
+            prefs: await SharedPreferences.getInstance(),
+            trackFileFinder: ({
+              required mediaRoot,
+              required host,
+              required folders,
+              required trackId,
+            }) async {
+              return null;
+            },
+            audioPlaybackService: fakeService,
+            animatedTitle: false,
+          ),
+        ),
+      );
+
+      // Process the asynchronous track lookup and resulting setState.
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(PlayerErrorView), findsOneWidget);
+      expect(find.textContaining('Track not found.'), findsOneWidget);
+      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Scan again'), findsOneWidget);
+
+      addTearDown(fakeService.dispose);
+    });
+
+    testWidgets('shows an error when the audio file cannot be played',
+        (tester) async {
+      final fakeService = FakeAudioPlaybackService();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            parsed: (
+              host: 'www.hitstergame.com',
+              folders: ['de'],
+              trackId: '00001',
+            ),
+            mediaRoot: '/unused',
+            prefs: await SharedPreferences.getInstance(),
+            trackFileFinder: ({
+              required mediaRoot,
+              required host,
+              required folders,
+              required trackId,
+            }) async =>
+                File('/unused/00001_broken.mp3'),
+            audioPlaybackService: fakeService,
+            animatedTitle: false,
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // First playback attempt fails.
+      fakeService.playCompleters[0].completeError(
+        StateError('Simulated playback failure'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.byType(PlayerErrorView), findsOneWidget);
+      expect(
+        find.textContaining('The audio file could not be played.'),
+        findsOneWidget,
+      );
+
+      addTearDown(fakeService.dispose);
+    });
+
+    testWidgets('retries playback through the service after failure',
+        (tester) async {
+      final fakeService = FakeAudioPlaybackService();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PlayerPage(
+            parsed: (
+              host: 'www.hitstergame.com',
+              folders: ['de'],
+              trackId: '00001',
+            ),
+            mediaRoot: '/unused',
+            prefs: await SharedPreferences.getInstance(),
+            trackFileFinder: ({
+              required mediaRoot,
+              required host,
+              required folders,
+              required trackId,
+            }) async =>
+                File('/unused/00001_broken.mp3'),
+            audioPlaybackService: fakeService,
+            animatedTitle: false,
+          ),
+        ),
+      );
+
+      // First playback attempt is still pending.
+      await tester.pump();
+
+      expect(fakeService.playCompleters, hasLength(1));
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // First playback attempt fails.
+      fakeService.playCompleters[0].completeError(
+        StateError('Simulated playback failure'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PlayerErrorView), findsOneWidget);
+
+      // Retry playback.
+      await tester.tap(find.text('Try again'));
+      await tester.pump();
+
+      expect(fakeService.playCompleters, hasLength(2));
+      expect(
+        fakeService.playedFiles[0],
+        fakeService.playedFiles[1],
+      );
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // Second playback attempt also fails.
+      fakeService.playCompleters[1].completeError(
+        StateError('Simulated playback failure'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PlayerErrorView), findsOneWidget);
+      expect(fakeService.playedFiles, hasLength(2));
+
+      addTearDown(fakeService.dispose);
+    });
+
   });
 }

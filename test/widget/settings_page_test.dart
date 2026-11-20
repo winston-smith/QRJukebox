@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_jukebox/main.dart';
 import 'package:qr_jukebox/pages/settings_page.dart';
 
+import '../fakes/fake_audio_playback_service.dart';
+
 void main() {
   group('Settings Page', () {
     late SharedPreferences prefs;
@@ -63,7 +65,7 @@ void main() {
     group('Interactions', () {
       testWidgets('saves keepAwake setting when switch is changed',
           (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs));
+        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -98,7 +100,7 @@ void main() {
 
       testWidgets('saves showStopwatch setting when switch is changed',
           (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs));
+        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -115,7 +117,7 @@ void main() {
 
       testWidgets('saves playback offset when value is changed',
           (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs));
+        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -132,7 +134,7 @@ void main() {
       });
 
       testWidgets('saves media folder and updates homepage', (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs));
+        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();

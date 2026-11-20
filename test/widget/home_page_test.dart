@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_jukebox/main.dart';
 import 'package:qr_jukebox/pages/home_page.dart';
 
+import '../fakes/fake_audio_playback_service.dart';
+
 void main() {
   group('Home Page', () {
     late SharedPreferences prefs;
@@ -14,7 +16,10 @@ void main() {
 
     group('UI', () {
       testWidgets('displays correctly with empty settings', (tester) async {
-        await pumpMyWidget( tester, HomePage(prefs: prefs) );
+        await pumpMyWidget( tester, HomePage(
+          prefs: prefs,
+          audioPlaybackService: FakeAudioPlaybackService()
+        ) );
 
         // find app title in AppBar
         final appBar = find.byType(AppBar);
@@ -43,7 +48,10 @@ void main() {
 
       testWidgets('displays media folder and skips setup button with custom settings', (tester) async {
         prefs.setString('mediaRootPath', '/foo/bar');
-        await pumpMyWidget( tester, HomePage(prefs: prefs) );
+        await pumpMyWidget( tester, HomePage(
+          prefs: prefs,
+          audioPlaybackService: FakeAudioPlaybackService()
+        ) );
 
         final text = tester.widget<Text>(
           find.byKey(const Key('mediaFolderText')),
@@ -57,7 +65,7 @@ void main() {
 
     group('Interactions', () {
       testWidgets('navigates to settings page and returns back home', (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs));
+        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
