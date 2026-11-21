@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_jukebox/screens/player_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:qr_jukebox/pages/player_page.dart';
 import 'package:qr_jukebox/widgets/player_error_view.dart';
 
 import '../fakes/fake_audio_playback_service.dart';

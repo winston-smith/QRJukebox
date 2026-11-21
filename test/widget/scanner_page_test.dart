@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
-import 'package:qr_jukebox/pages/scanner_page.dart';
+import 'package:qr_jukebox/screens/scanner_page.dart';
 
 class ScannerTestHost extends StatefulWidget {
   const ScannerTestHost({super.key});

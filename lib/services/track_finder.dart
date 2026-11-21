@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:path/path.dart' as p;
+import 'package:path/path.dart' as path;
 
 typedef TrackFileFinder = Future<File?> Function({
   required String mediaRoot,
@@ -22,9 +22,8 @@ Future<File?> findTrackFile({
   Directory? currentDir;
   await for (final entity in baseDir.list()) {
     if (entity is Directory) {
-      final name = p.basename(entity.path).toLowerCase();
-      if (name == host.toLowerCase() ||
-          name.startsWith('${host.toLowerCase()}_')) {
+      final name = path.basename(entity.path).toLowerCase();
+      if (name == host.toLowerCase() || name.startsWith('${host.toLowerCase()}_')) {
         currentDir = entity;
         break;
       }
@@ -32,13 +31,13 @@ Future<File?> findTrackFile({
   }
   if (currentDir == null) return null;
 
-  // 2. Traverse folders
+  // 2. Traverse folders (e.g. ['de', 'aaaa0015'])
   for (final segment in folders) {
     Directory? nextDir;
     final search = segment.toLowerCase();
     await for (final entity in currentDir!.list()) {
       if (entity is Directory) {
-        final name = p.basename(entity.path).toLowerCase();
+        final name = path.basename(entity.path).toLowerCase();
         if (name == search || name.startsWith('${search}_')) {
           nextDir = entity;
           break;
@@ -52,12 +51,11 @@ Future<File?> findTrackFile({
   // 3. Find track file in the final directory
   await for (final entity in currentDir!.list()) {
     if (entity is! File) continue;
-    final ext = p.extension(entity.path).toLowerCase();
+    final ext = path.extension(entity.path).toLowerCase();
     if (!['.mp3', '.m4a', '.wav', '.flac'].contains(ext)) continue;
 
-    final name = p.basenameWithoutExtension(entity.path).toLowerCase();
-    if (name == trackId.toLowerCase() ||
-        name.startsWith('${trackId.toLowerCase()}_')) {
+    final name = path.basenameWithoutExtension(entity.path).toLowerCase();
+    if (name == trackId.toLowerCase() || name.startsWith('${trackId.toLowerCase()}_')) {
       return entity;
     }
   }

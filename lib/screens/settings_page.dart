@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+import 'package:qr_jukebox/app/qr_jukebox_app.dart';
+import 'package:qr_jukebox/services/app_version.dart';
 
 class SettingsPage extends StatefulWidget {
   final SharedPreferences prefs;
@@ -58,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _pickDir() async {
     try {
-      String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
+      String? selectedDirectory = await FilePicker.getDirectoryPath();
 
       if (selectedDirectory != null) {
         setState(() {
@@ -80,12 +83,65 @@ class _SettingsPageState extends State<SettingsPage> {
     final cs = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: cs.inversePrimary,
+        backgroundColor: cs.primaryContainer,
+        foregroundColor: cs.onPrimaryContainer,
         title: const Text('Settings'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          Text('Appearance',
+              style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(
+                  value: 'system',
+                  label: Text('System'),
+                  icon: Icon(Icons.brightness_auto),
+                ),
+                ButtonSegment(
+                  value: 'light',
+                  label: Text('Light'),
+                  icon: Icon(Icons.light_mode),
+                ),
+                ButtonSegment(
+                  value: 'dark',
+                  label: Text('Dark'),
+                  icon: Icon(Icons.dark_mode),
+                ),
+              ],
+              selected: {widget.prefs.getString('themeMode') ?? 'system'},
+              onSelectionChanged: (newSelection) async {
+                final jukeboxApp = QRJukeboxApp.of(context);
+                final mode = newSelection.first;
+                await widget.prefs.setString('themeMode', mode);
+                if (!mounted) return;
+                jukeboxApp?.reloadTheme();
+                setState(() {});
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            title: const Text('Dynamic Color'),
+            subtitle: const Text('Use Material You system wallpaper colors'),
+            value: widget.prefs.getBool('useDynamicColor') ?? true,
+            onChanged: (value) async {
+              final jukeboxApp = QRJukeboxApp.of(context);
+              await widget.prefs.setBool('useDynamicColor', value);
+              if (!mounted) return;
+              jukeboxApp?.reloadTheme();
+              setState(() {});
+            },
+            secondary: const Icon(Icons.palette_outlined),
+            contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 28),
+          const Divider(),
+          const SizedBox(height: 16),
           Text('Device Settings',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
@@ -127,99 +183,95 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             onChanged: _saveOffset,
           ),
+
           const SizedBox(height: 28),
           const Divider(),
           const SizedBox(height: 16),
-          Text('Media Folder', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  key: const Key('mediaFolderTextField'),
-                  controller: _pathCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Path',
-                    hintText: '/storage/emulated/0/Music/Jukebox',
-                    border: OutlineInputBorder(),
-                    helperText:
-                        'Folder containing <host>/<language>/<gameId>_*/',
-                  ),
-                  onSubmitted: _savePath,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: IconButton.filled(
-                  icon: const Icon(Icons.folder_open),
-                  onPressed: _pickDir,
-                  tooltip: 'Choose Folder',
-                ),
-              ),
-            ],
-          ),
+
+          Text('Media Folder',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
+
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              key: const Key('savePathButton'),
-              onPressed: () => _savePath(_pathCtrl.text),
-              icon: const Icon(Icons.save),
-              label: const Text('Save Path'),
+              onPressed: _pickDir,
+              icon: const Icon(Icons.folder_open),
+              label: const Text('Choose Folder'),
+              key: const Key('chooseMediaFolder'),
             ),
           ),
+          const SizedBox(height: 2),
+          if (_pathCtrl.text.isEmpty) ...[
+            Text(
+              'No folder selected!',
+              style: TextStyle(
+                fontSize: 24,
+                color: cs.error,
+              ),
+            ),
+          ] else ...[
+            Text(
+              'Selected folder: ${_pathCtrl.text}',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
           const SizedBox(height: 8),
-          Text('Expected Folder Structure',
-              style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 8),
+          const Text('Expected folder structure:'),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(8),
+              color: cs.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
+            child: Text(
               '<Media Folder>/\n'
-              '└── example.com/\n'
-              '    └── de_original-game-edition/\n'
-              '        ├── 00015_Song Title.mp3\n'
-              '        ├── 00016_Another Song.mp3\n'
-              '        └── aaaa0015_Superhits-Extension/\n'
-              '            ├── 00015_Song Title.mp3\n'
-              '            └── 00016_Another Song.mp3',
-              style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                  '└── example.com/\n'
+                  '    └── de_original-game-edition/\n'
+                  '        ├── 00015_Song Title.mp3\n'
+                  '        ├── 00016_Another Song.mp3\n'
+                  '        └── aaaa0015_Superhits-Extension/\n'
+                  '            ├── 00015_Song Title.mp3\n'
+                  '            └── 00016_Another Song.mp3',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: cs.onSurface,
+              ),
             ),
           ),
-          const SizedBox(height: 48),
+
+          const SizedBox(height: 28),
           const Divider(),
           const SizedBox(height: 16),
           Center(
             child: Column(
               children: [
                 Image.asset(
-                  'assets/branding/app_icon.png',
+                  'assets/branding/app_icon_inapp.png',
                   width: 64,
                   height: 64,
-                  color: Colors.grey,
-                  colorBlendMode: BlendMode.srcIn,
+                  color: cs.primary,
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'QR Jukebox',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.grey,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const Text(
-                  'Version 1.0.15',
-                  style: TextStyle(color: Colors.grey),
+                const SizedBox(height: 2),
+                Text(
+                  'Version ${AppVersion.version}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
-                const Text(
+                Text(
                   'Created by Lennard Hanß',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 TextButton.icon(
