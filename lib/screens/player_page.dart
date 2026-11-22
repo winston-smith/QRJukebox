@@ -138,7 +138,7 @@ class _PlayerPageState extends State<PlayerPage> {
       trackId: widget.parsed.trackId,
     );
 
-    // Neuer Track wurde gefunden: bisherige Wiedergabe beenden.
+    // Stop previous playback before handling the scanned track.
     await widget.audioPlaybackService.stop();
 
     if (!mounted) return;
@@ -346,34 +346,41 @@ class _PlayerPageState extends State<PlayerPage> {
     final cs = Theme.of(context).colorScheme;
     final trackDisplay = int.tryParse(widget.parsed.trackId.toString()) ?? widget.parsed.trackId;
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: cs.inversePrimary,
-        title: PlayerTitle(
-          text: '#$trackDisplay  ·  ${_gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')}',
-          animated: widget.animatedTitle,
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: _showInfoDialog,
-            tooltip: 'Track Info',
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          unawaited(widget.audioPlaybackService.stop());
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: cs.inversePrimary,
+          title: PlayerTitle(
+            text: '#$trackDisplay  ·  ${_gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')}',
+            animated: widget.animatedTitle,
           ),
-        ],
-      ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: _showInfoDialog,
+              tooltip: 'Track Info',
+            ),
+          ],
+        ),
 
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _error != null
-                  ? PlayerErrorView(
-                      message: _error!,
-                      onRetry: _loadAndPlay,
-                      onScanAgain: _scanAndPlay,
-                    )
-                  : _buildPlayer(cs),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? PlayerErrorView(
+                        message: _error!,
+                        onRetry: _loadAndPlay,
+                        onScanAgain: _scanAndPlay,
+                      )
+                    : _buildPlayer(cs),
+          ),
         ),
       ),
     );
