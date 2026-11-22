@@ -7,7 +7,7 @@ class AppVersion {
     try {
       final packageInfo = await PackageInfo.fromPlatform();
       _version = packageInfo.version;
-    } catch (e) {
+    } catch (_) {
     }
   }
   static String get version => _version;

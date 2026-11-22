@@ -50,6 +50,7 @@ dependencies:
   flutter_native_splash: ^2.4.8
   flutter_launcher_icons: ^0.14.4
   mocktail: ^1.0.5
+  material_ui: ^1.11.1
 
 dev_dependencies:
   flutter_test:

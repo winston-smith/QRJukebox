@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_jukebox/app/qr_jukebox_app.dart';
 import 'package:qr_jukebox/screens/home_page.dart';

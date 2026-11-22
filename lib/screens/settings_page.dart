@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
@@ -61,6 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _pickDir() async {
     try {
+      // ignore: deprecated_member_use
       String? selectedDirectory = await FilePicker.getDirectoryPath();
 
       if (selectedDirectory != null) {

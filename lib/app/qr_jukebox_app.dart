@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'package:dynamic_color/dynamic_color.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_jukebox/screens/home_page.dart';
@@ -134,7 +135,7 @@ class QRJukeboxAppState extends State<QRJukeboxApp> {
 
   @override
   void dispose() {
-    widget.audioPlaybackService.dispose();
+    unawaited(widget.audioPlaybackService.dispose());
     super.dispose();
   }
 }
