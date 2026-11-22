@@ -412,5 +412,83 @@ void main() {
       addTearDown(fakeService.dispose);
     });
 
+
+    testWidgets('stops playback when navigating back to the homepage',
+        (tester) async {
+      final fakeService = FakeAudioPlaybackService();
+      final prefs = await SharedPreferences.getInstance();
+
+      tester.view.physicalSize = const Size(1080, 1920);
+      tester.view.devicePixelRatio = 1.0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  key: const Key('open-player'),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlayerPage(
+                          parsed: (
+                            host: 'www.hitstergame.com',
+                            folders: ['de'],
+                            trackId: '00001',
+                          ),
+                          mediaRoot: '/unused',
+                          prefs: prefs,
+                          trackFileFinder: ({
+                            required mediaRoot,
+                            required host,
+                            required folders,
+                            required trackId,
+                          }) async =>
+                              File('/unused/00001_test.mp3'),
+                          audioPlaybackService: fakeService,
+                          animatedTitle: false,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open player'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // Open the player page.
+      await tester.tap(find.byKey(const Key('open-player')));
+      await tester.pump();
+
+      expect(fakeService.playCompleters, hasLength(1));
+
+      // Complete playback.
+      fakeService.playCompleters[0].complete();
+      await tester.pumpAndSettle();
+
+      expect(fakeService.playedFiles, ['/unused/00001_test.mp3']);
+
+      // The initial stop() happens before playback starts.
+      expect(fakeService.stopCalls, 1);
+
+      // Navigate back to the homepage.
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Open player'), findsOneWidget);
+
+      // Playback should have been stopped when leaving the player.
+      expect(fakeService.stopCalls, 2);
+
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(fakeService.dispose);
+    });
+
   });
 }
