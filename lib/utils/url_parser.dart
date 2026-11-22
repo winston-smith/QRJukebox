@@ -2,6 +2,7 @@ typedef ParsedTrackUrl = ({
   String host,
   List<String> folders,
   String trackId,
+  String raw
 });
 
 /// Parses a URL into its components: host, folders, trackId.
@@ -18,6 +19,7 @@ ParsedTrackUrl? parseUrl(String raw) {
       host: host,
       folders: segs.sublist(0, segs.length - 1),
       trackId: segs.last,
+      raw: raw
       );
     }
   } catch (_) {}

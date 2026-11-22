@@ -48,6 +48,7 @@ void main() {
               host: 'www.hitstergame.com',
               folders: ['de'],
               trackId: '00001',
+              raw: 'www.hitstergame.com/de/00001',
             ),
             mediaRoot: '/unused',
             prefs: await SharedPreferences.getInstance(),
@@ -59,7 +60,6 @@ void main() {
             }) async =>
                 File('/unused/00001_test.mp3'),
             audioPlaybackService: fakeService,
-            animatedTitle: false,
           ),
         ),
       );
@@ -77,7 +77,6 @@ void main() {
       expect(find.byType(PlayerErrorView), findsNothing);
 
       // Verify that the player UI is displayed.
-      expect(find.text('unused'), findsOneWidget);
       expect( fakeService.playedFiles, ['/unused/00001_test.mp3']);
 
       addTearDown(tester.view.resetPhysicalSize);
@@ -97,6 +96,7 @@ void main() {
               host: 'www.hitstergame.com',
               folders: ['de'],
               trackId: '00001',
+              raw: 'www.hitstergame.com/de/00001',
             ),
             mediaRoot: '/unused',
             prefs: await SharedPreferences.getInstance(),
@@ -108,7 +108,6 @@ void main() {
             }) async =>
                 File('/unused/00001_test.mp3'),
             audioPlaybackService: fakeService,
-            animatedTitle: false,
           ),
         ),
       );
@@ -151,6 +150,7 @@ void main() {
               host: 'www.hitstergame.com',
               folders: ['de'],
               trackId: '00001',
+              raw: 'www.hitstergame.com/de/00001',
             ),
             mediaRoot: '/unused',
             prefs: await SharedPreferences.getInstance(),
@@ -161,7 +161,6 @@ void main() {
               required trackId,
             }) async => File('/unused/$trackId.mp3'),
             audioPlaybackService: fakeService,
-            animatedTitle: false,
             scannerBuilder: () => const FakeScannerPage(),
           ),
         ),
@@ -215,6 +214,7 @@ void main() {
               host: 'www.hitstergame.com',
               folders: ['de'],
               trackId: '00001',
+              raw: 'www.hitstergame.com/de/00001',
             ),
             mediaRoot: '/unused',
             prefs: await SharedPreferences.getInstance(),
@@ -231,7 +231,6 @@ void main() {
               return File('/unused/$trackId.mp3');
             },
             audioPlaybackService: fakeService,
-            animatedTitle: false,
             scannerBuilder: () => const FakeScannerPage(),
           ),
         ),
@@ -266,6 +265,7 @@ void main() {
         host: 'www.hitstergame.com',
         folders: ['de'],
         trackId: '00001',
+        raw: 'www.hitstergame.com/de/00001',
       );
 
       await tester.pumpWidget(
@@ -283,7 +283,6 @@ void main() {
               return null;
             },
             audioPlaybackService: fakeService,
-            animatedTitle: false,
           ),
         ),
       );
@@ -311,6 +310,7 @@ void main() {
               host: 'www.hitstergame.com',
               folders: ['de'],
               trackId: '00001',
+              raw: 'www.hitstergame.com/de/00001',
             ),
             mediaRoot: '/unused',
             prefs: await SharedPreferences.getInstance(),
@@ -322,7 +322,6 @@ void main() {
             }) async =>
                 File('/unused/00001_broken.mp3'),
             audioPlaybackService: fakeService,
-            animatedTitle: false,
           ),
         ),
       );
@@ -359,6 +358,7 @@ void main() {
               host: 'www.hitstergame.com',
               folders: ['de'],
               trackId: '00001',
+              raw: 'www.hitstergame.com/de/00001',
             ),
             mediaRoot: '/unused',
             prefs: await SharedPreferences.getInstance(),
@@ -370,7 +370,6 @@ void main() {
             }) async =>
                 File('/unused/00001_broken.mp3'),
             audioPlaybackService: fakeService,
-            animatedTitle: false,
           ),
         ),
       );
@@ -412,7 +411,6 @@ void main() {
       addTearDown(fakeService.dispose);
     });
 
-
     testWidgets('stops playback when navigating back to the homepage',
         (tester) async {
       final fakeService = FakeAudioPlaybackService();
@@ -437,6 +435,7 @@ void main() {
                             host: 'www.hitstergame.com',
                             folders: ['de'],
                             trackId: '00001',
+                            raw: 'www.hitstergame.com/de/00001',
                           ),
                           mediaRoot: '/unused',
                           prefs: prefs,
@@ -448,7 +447,6 @@ void main() {
                           }) async =>
                               File('/unused/00001_test.mp3'),
                           audioPlaybackService: fakeService,
-                          animatedTitle: false,
                         ),
                       ),
                     );

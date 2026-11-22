@@ -51,6 +51,7 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   mocktail: ^1.0.5
   material_ui: ^1.11.1
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:
