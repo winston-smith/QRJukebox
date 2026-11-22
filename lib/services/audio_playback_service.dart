@@ -1,4 +1,3 @@
-
 abstract interface class AudioPlaybackService {
   Future<void> play(
     String filePath, {

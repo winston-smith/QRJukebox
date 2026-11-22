@@ -48,20 +48,15 @@ void main() {
           position: Duration.zero,
         )).thenAnswer((_) async {});
 
-    when(() => mockPlayer.pause())
-        .thenAnswer((_) async {});
+    when(() => mockPlayer.pause()).thenAnswer((_) async {});
 
-    when(() => mockPlayer.resume())
-        .thenAnswer((_) async {});
+    when(() => mockPlayer.resume()).thenAnswer((_) async {});
 
-    when(() => mockPlayer.seek(any()))
-        .thenAnswer((_) async {});
+    when(() => mockPlayer.seek(any())).thenAnswer((_) async {});
 
-    when(() => mockPlayer.stop())
-        .thenAnswer((_) async {});
+    when(() => mockPlayer.stop()).thenAnswer((_) async {});
 
-    when(() => mockPlayer.dispose())
-        .thenAnswer((_) async {});
+    when(() => mockPlayer.dispose()).thenAnswer((_) async {});
   });
 
   group('service tests', () {
@@ -222,8 +217,7 @@ void main() {
       when(() => secondPlayer.onPlayerComplete)
           .thenAnswer((_) => completedController.stream);
 
-      when(() => secondPlayer.dispose())
-          .thenAnswer((_) async {});
+      when(() => secondPlayer.dispose()).thenAnswer((_) async {});
 
       var factoryCalls = 0;
 
@@ -277,18 +271,18 @@ void main() {
       await service.dispose();
     });
 
-  test('stops playback', () async {
-    final service = AudioplayersAudioPlaybackService(
-      () => mockPlayer,
-    );
+    test('stops playback', () async {
+      final service = AudioplayersAudioPlaybackService(
+        () => mockPlayer,
+      );
 
-    await service.play('/music/test.mp3');
-    await service.stop();
+      await service.play('/music/test.mp3');
+      await service.stop();
 
-    verify(() => mockPlayer.stop()).called(1);
+      verify(() => mockPlayer.stop()).called(1);
 
-    await service.dispose();
-  });
+      await service.dispose();
+    });
 
     test('seeks to the specified position', () async {
       final service = AudioplayersAudioPlaybackService(

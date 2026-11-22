@@ -12,11 +12,11 @@ class HomePage extends StatefulWidget {
   final SharedPreferences prefs;
   final AudioPlaybackService audioPlaybackService;
 
-  const HomePage( {
+  const HomePage({
     super.key,
     required this.prefs,
     required this.audioPlaybackService,
-  } );
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -58,8 +58,7 @@ class _HomePageState extends State<HomePage> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   void _startScanner() async {
@@ -149,9 +148,9 @@ class _HomePageState extends State<HomePage> {
               Text(
                 'QR Jukebox',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: cs.primary,
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: cs.primary,
+                    ),
               ),
               const SizedBox(height: 8),
               Row(
@@ -170,8 +169,8 @@ class _HomePageState extends State<HomePage> {
                           : 'No media folder configured',
                       key: const Key('mediaFolderText'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: hasRoot ? Colors.green : Colors.orange,
-                      ),
+                            color: hasRoot ? Colors.green : Colors.orange,
+                          ),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

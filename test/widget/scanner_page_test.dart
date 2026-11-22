@@ -35,8 +35,7 @@ class _ScannerTestHostState extends State<ScannerTestHost> {
             onPressed: _openScanner,
             child: const Text('Open scanner'),
           ),
-          if (_scannedText != null)
-            Text(_scannedText!),
+          if (_scannedText != null) Text(_scannedText!),
         ],
       ),
     );
@@ -84,5 +83,4 @@ void main() {
     expect(find.byType(ScannerPage), findsNothing);
     expect(find.text('hello world'), findsOneWidget);
   });
-
 }

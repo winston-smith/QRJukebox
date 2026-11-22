@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../fakes/fake_audio_playback_service.dart';
 import '../fakes/fake_file_picker.dart';
 
-
 void main() {
   group('Settings Page', () {
     late SharedPreferences prefs;
@@ -17,18 +16,16 @@ void main() {
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       prefs = await SharedPreferences.getInstance();
-      
-      FilePickerPlatform.instance = FakeFilePicker(directoryPath: '/my/music/folder');
+
+      FilePickerPlatform.instance =
+          FakeFilePicker(directoryPath: '/my/music/folder');
     });
 
     group('UI', () {
       testWidgets('displays settings page correctly with empty settings',
           (tester) async {
-        await pumpMyWidget(
-          tester,
-          SettingsPage(prefs: prefs),
-          size: const Size(1179, 6000)
-        );
+        await pumpMyWidget(tester, SettingsPage(prefs: prefs),
+            size: const Size(1179, 6000));
 
         // find 'Settings' in AppBar
         expect(find.byType(AppBar), findsOneWidget);
@@ -57,11 +54,8 @@ void main() {
         await prefs.setBool('keepAwake', true);
         await prefs.setBool('showStopwatch', true);
 
-        await pumpMyWidget(
-          tester,
-          SettingsPage(prefs: prefs),
-          size: const Size(1179, 6000)
-        );
+        await pumpMyWidget(tester, SettingsPage(prefs: prefs),
+            size: const Size(1179, 6000));
 
         final keepAwakeSwitch = tester
             .widget<SwitchListTile>(find.byKey(const Key('keepAwakeSwitch')));
@@ -86,7 +80,10 @@ void main() {
     group('Interactions', () {
       testWidgets('saves keepAwake setting when switch is changed',
           (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
+        await tester.pumpWidget(QRJukeboxApp(
+          prefs: prefs,
+          audioPlaybackService: FakeAudioPlaybackService(),
+        ));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -121,7 +118,10 @@ void main() {
 
       testWidgets('saves showStopwatch setting when switch is changed',
           (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
+        await tester.pumpWidget(QRJukeboxApp(
+          prefs: prefs,
+          audioPlaybackService: FakeAudioPlaybackService(),
+        ));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -138,7 +138,10 @@ void main() {
 
       testWidgets('saves playback offset when value is changed',
           (tester) async {
-        await tester.pumpWidget(QRJukeboxApp(prefs: prefs, audioPlaybackService: FakeAudioPlaybackService(),));
+        await tester.pumpWidget(QRJukeboxApp(
+          prefs: prefs,
+          audioPlaybackService: FakeAudioPlaybackService(),
+        ));
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -182,16 +185,13 @@ void main() {
         addTearDown(tester.view.resetPhysicalSize);
         addTearDown(tester.view.resetDevicePixelRatio);
       });
-
     });
 
     tearDown(() {
       FilePickerPlatform.instance = originalFilePicker;
     });
-
   });
 }
-
 
 Future<void> pumpMyWidget(
   WidgetTester tester,

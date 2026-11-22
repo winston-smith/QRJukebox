@@ -5,10 +5,8 @@ import 'package:qr_jukebox/infrastructure/audioplayers_audio_playback_service.da
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-
 import 'app/qr_jukebox_app.dart';
 import 'package:qr_jukebox/services/app_version.dart';
-
 
 // ─── Entry Point ───────────────────────────────────────────────────────────
 
@@ -23,7 +21,7 @@ void main() async {
 
   final keepAwake = prefs.getBool('keepAwake') ?? true;
   WakelockPlus.toggle(enable: keepAwake);
-  
+
   final audioPlaybackService = AudioplayersAudioPlaybackService(
     () => AudioPlayer(),
   );

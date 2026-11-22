@@ -62,10 +62,10 @@ class _PlayerPageState extends State<PlayerPage> {
         widget.audioPlaybackService.playing.listen((playing) {
       if (!mounted) return;
 
-        setState(() {
+      setState(() {
         _playing = playing;
         if (playing) _completed = false;
-        });
+      });
     });
 
     _positionSubscription =
@@ -86,8 +86,7 @@ class _PlayerPageState extends State<PlayerPage> {
       });
     });
 
-    _completedSubscription =
-        widget.audioPlaybackService.completed.listen((_) {
+    _completedSubscription = widget.audioPlaybackService.completed.listen((_) {
       if (!mounted) return;
 
       setState(() {
@@ -112,14 +111,17 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _loadAndPlay() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
 
     if (Platform.isAndroid) {
       if (!await _ensurePermission()) {
         if (mounted) {
           setState(() {
             _error =
-            'Storage access denied.\n\nPlease allow storage permission in Android settings.';
+                'Storage access denied.\n\nPlease allow storage permission in Android settings.';
             _loading = false;
           });
         }
@@ -165,8 +167,8 @@ class _PlayerPageState extends State<PlayerPage> {
     try {
       await widget.audioPlaybackService.play(
         file.path,
-      position: Duration(seconds: startOffset),
-    );
+        position: Duration(seconds: startOffset),
+      );
 
       if (mounted) {
         setState(() {
@@ -188,7 +190,8 @@ class _PlayerPageState extends State<PlayerPage> {
 
   Future<void> _seekRelative(int seconds) async {
     final newPos = _pos + Duration(seconds: seconds);
-    await widget.audioPlaybackService.seek(newPos < Duration.zero ? Duration.zero : newPos);
+    await widget.audioPlaybackService
+        .seek(newPos < Duration.zero ? Duration.zero : newPos);
   }
 
   Future<void> _scanAndPlay() async {
@@ -221,7 +224,8 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<bool> _ensurePermission() async {
-    if (await Permission.audio.isGranted || await Permission.storage.isGranted) {
+    if (await Permission.audio.isGranted ||
+        await Permission.storage.isGranted) {
       return true;
     }
     final audioStatus = await Permission.audio.request();
@@ -255,7 +259,7 @@ class _PlayerPageState extends State<PlayerPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar( backgroundColor: cs.inversePrimary ),
+        appBar: AppBar(backgroundColor: cs.inversePrimary),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -277,7 +281,7 @@ class _PlayerPageState extends State<PlayerPage> {
   Widget _buildPlayer(ColorScheme cs) {
     final maxMs = _dur.inMilliseconds.toDouble();
     final curMs =
-    _pos.inMilliseconds.toDouble().clamp(0.0, maxMs > 0 ? maxMs : 1.0);
+        _pos.inMilliseconds.toDouble().clamp(0.0, maxMs > 0 ? maxMs : 1.0);
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -285,8 +289,8 @@ class _PlayerPageState extends State<PlayerPage> {
         TrackCard(
           data: widget.parsed.raw,
           gamePack: widget.parsed.folders.isNotEmpty
-            ? widget.parsed.folders.last
-            : 'Root',
+              ? widget.parsed.folders.last
+              : 'Root',
           trackNumber: widget.parsed.trackId,
           artist: _tags?.artist,
           title: _tags?.title,
@@ -299,9 +303,7 @@ class _PlayerPageState extends State<PlayerPage> {
           icon: const Icon(Icons.qr_code_scanner),
           label: const Text('Nächste Karte scannen'),
         ),
-
         const SizedBox(height: 24),
-
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: cs.primary,
@@ -315,7 +317,8 @@ class _PlayerPageState extends State<PlayerPage> {
             max: maxMs > 0 ? maxMs : 1.0,
             onChanged: (v) {
               if (maxMs > 0) {
-                widget.audioPlaybackService.seek(Duration(milliseconds: v.toInt()));
+                widget.audioPlaybackService
+                    .seek(Duration(milliseconds: v.toInt()));
               }
             },
           ),
@@ -332,14 +335,12 @@ class _PlayerPageState extends State<PlayerPage> {
             ],
           ),
         ),
-
         const SizedBox(height: 24),
-
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconButton(
-              key: const Key( 'rewindButton'),
+              key: const Key('rewindButton'),
               icon: const Icon(Icons.replay_10_rounded),
               onPressed: () => _seekRelative(-10),
               iconSize: 32,
@@ -347,7 +348,7 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             const SizedBox(width: 16),
             FilledButton(
-              key: const Key( 'playPauseButton'),
+              key: const Key('playPauseButton'),
               onPressed: _togglePlayPause,
               style: FilledButton.styleFrom(
                 shape: const CircleBorder(),
@@ -360,7 +361,7 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
             const SizedBox(width: 16),
             IconButton(
-              key: const Key( 'forwardButton'),
+              key: const Key('forwardButton'),
               icon: const Icon(Icons.forward_10_rounded),
               onPressed: () => _seekRelative(10),
               iconSize: 32,
@@ -368,7 +369,6 @@ class _PlayerPageState extends State<PlayerPage> {
             ),
           ],
         ),
-
         if (widget.prefs.getBool('showStopwatch') ?? false) ...[
           const SizedBox(height: 32),
           StreamBuilder(
@@ -376,7 +376,8 @@ class _PlayerPageState extends State<PlayerPage> {
             builder: (context, _) {
               final elapsed = _stopwatch.elapsed;
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: cs.secondaryContainer,
                   borderRadius: BorderRadius.circular(20),
@@ -384,7 +385,8 @@ class _PlayerPageState extends State<PlayerPage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.timer_outlined, size: 18, color: cs.onSecondaryContainer),
+                    Icon(Icons.timer_outlined,
+                        size: 18, color: cs.onSecondaryContainer),
                     const SizedBox(width: 8),
                     Text(
                       'Spent time: ${formatDuration(elapsed)}',

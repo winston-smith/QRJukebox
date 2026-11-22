@@ -1,4 +1,3 @@
-
 import 'package:material_ui/material_ui.dart';
 
 class PlayerErrorView extends StatelessWidget {
@@ -26,9 +25,8 @@ class PlayerErrorView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.red)
-          ),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.red)),
           const SizedBox(height: 24),
           FilledButton.icon(
             key: const Key('retryButton'),

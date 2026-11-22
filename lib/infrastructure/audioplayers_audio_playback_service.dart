@@ -5,9 +5,9 @@ import 'package:qr_jukebox/services/audio_playback_service.dart';
 
 typedef AudioPlayerFactory = AudioPlayer Function();
 
-class AudioplayersAudioPlaybackService implements AudioPlaybackService{
+class AudioplayersAudioPlaybackService implements AudioPlaybackService {
   final AudioPlayerFactory _createPlayer;
-  
+
   AudioplayersAudioPlaybackService(
     this._createPlayer,
   );
@@ -30,8 +30,7 @@ class AudioplayersAudioPlaybackService implements AudioPlaybackService{
     final player = _createPlayer();
     _player = player;
 
-    _playerStateSubscription =
-        player.onPlayerStateChanged.listen((state) {
+    _playerStateSubscription = player.onPlayerStateChanged.listen((state) {
       _playingController.add(state == PlayerState.playing);
     });
 
@@ -41,8 +40,7 @@ class AudioplayersAudioPlaybackService implements AudioPlaybackService{
     _durationSubscription =
         player.onDurationChanged.listen(_durationController.add);
 
-    _completedSubscription =
-        player.onPlayerComplete.listen((_) {
+    _completedSubscription = player.onPlayerComplete.listen((_) {
       _playingController.add(false);
       _completedController.add(null);
     });

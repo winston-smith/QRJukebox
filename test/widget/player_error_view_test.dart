@@ -8,11 +8,12 @@ void main() {
     var retryCalled = false;
     var scanAgainCalled = false;
 
-    await tester.pumpWidget(MaterialApp(home: PlayerErrorView(
+    await tester.pumpWidget(MaterialApp(
+        home: PlayerErrorView(
       message: errorMsg,
       onRetry: () => retryCalled = true,
       onScanAgain: () => scanAgainCalled = true,
-    ) ) );
+    )));
 
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
 
@@ -32,5 +33,4 @@ void main() {
     await tester.tap(find.byKey(const Key('rescanButton')));
     expect(scanAgainCalled, isTrue);
   });
-
 }

@@ -23,7 +23,8 @@ Future<File?> findTrackFile({
   await for (final entity in baseDir.list()) {
     if (entity is Directory) {
       final name = path.basename(entity.path).toLowerCase();
-      if (name == host.toLowerCase() || name.startsWith('${host.toLowerCase()}_')) {
+      if (name == host.toLowerCase() ||
+          name.startsWith('${host.toLowerCase()}_')) {
         currentDir = entity;
         break;
       }
@@ -55,7 +56,8 @@ Future<File?> findTrackFile({
     if (!['.mp3', '.m4a', '.wav', '.flac'].contains(ext)) continue;
 
     final name = path.basenameWithoutExtension(entity.path).toLowerCase();
-    if (name == trackId.toLowerCase() || name.startsWith('${trackId.toLowerCase()}_')) {
+    if (name == trackId.toLowerCase() ||
+        name.startsWith('${trackId.toLowerCase()}_')) {
       return entity;
     }
   }

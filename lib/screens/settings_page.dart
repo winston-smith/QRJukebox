@@ -92,8 +92,7 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Appearance',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text('Appearance', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
@@ -185,15 +184,11 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             onChanged: _saveOffset,
           ),
-
           const SizedBox(height: 28),
           const Divider(),
           const SizedBox(height: 16),
-
-          Text('Media Folder',
-              style: Theme.of(context).textTheme.titleMedium),
+          Text('Media Folder', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
-
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
@@ -228,13 +223,13 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: Text(
               '<Media Folder>/\n'
-                  '└── example.com/\n'
-                  '    └── de_original-game-edition/\n'
-                  '        ├── 00015_Song Title.mp3\n'
-                  '        ├── 00016_Another Song.mp3\n'
-                  '        └── aaaa0015_Superhits-Extension/\n'
-                  '            ├── 00015_Song Title.mp3\n'
-                  '            └── 00016_Another Song.mp3',
+              '└── example.com/\n'
+              '    └── de_original-game-edition/\n'
+              '        ├── 00015_Song Title.mp3\n'
+              '        ├── 00016_Another Song.mp3\n'
+              '        └── aaaa0015_Superhits-Extension/\n'
+              '            ├── 00015_Song Title.mp3\n'
+              '            └── 00016_Another Song.mp3',
               style: TextStyle(
                 fontFamily: 'monospace',
                 fontSize: 12,
@@ -242,7 +237,6 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 28),
           const Divider(),
           const SizedBox(height: 16),
@@ -259,21 +253,21 @@ class _SettingsPageState extends State<SettingsPage> {
                 Text(
                   'QR Jukebox',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Version ${AppVersion.version}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                 ),
                 Text(
                   'Created by Lennard Hanß',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 TextButton.icon(

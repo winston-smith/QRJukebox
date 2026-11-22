@@ -31,7 +31,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Player Page', () {
-
     setUp(() {
       SharedPreferences.setMockInitialValues({});
     });
@@ -77,7 +76,7 @@ void main() {
       expect(find.byType(PlayerErrorView), findsNothing);
 
       // Verify that the player UI is displayed.
-      expect( fakeService.playedFiles, ['/unused/00001_test.mp3']);
+      expect(fakeService.playedFiles, ['/unused/00001_test.mp3']);
 
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -159,7 +158,8 @@ void main() {
               required host,
               required folders,
               required trackId,
-            }) async => File('/unused/$trackId.mp3'),
+            }) async =>
+                File('/unused/$trackId.mp3'),
             audioPlaybackService: fakeService,
             scannerBuilder: () => const FakeScannerPage(),
           ),
@@ -198,7 +198,7 @@ void main() {
         ['/unused/00001.mp3', '/unused/00002.mp3'],
       );
     });
-    
+
     testWidgets('stops playback when the scanned track cannot be found', (
       tester,
     ) async {
@@ -487,6 +487,5 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
       addTearDown(fakeService.dispose);
     });
-
   });
 }
