@@ -2,14 +2,12 @@ import 'dart:async';
 import 'dart:io';
 import 'package:material_ui/material_ui.dart';
 import 'package:qr_jukebox/services/audio_playback_service.dart';
+import 'package:qr_jukebox/widgets/track_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:path/path.dart' as p;
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
 import 'package:qr_jukebox/services/track_finder.dart';
 import 'package:qr_jukebox/widgets/player_error_view.dart';
-import 'package:qr_jukebox/widgets/player_title.dart';
-import 'package:qr_jukebox/app/fullscreen_cover.dart';
 import 'package:qr_jukebox/utils/formatting.dart';
 import 'package:qr_jukebox/utils/url_parser.dart';
 import 'package:qr_jukebox/screens/scanner_page.dart';
@@ -21,7 +19,6 @@ class PlayerPage extends StatefulWidget {
   final String mediaRoot;
   final SharedPreferences prefs;
   final TrackFileFinder trackFileFinder;
-  final bool animatedTitle;
   final AudioPlaybackService audioPlaybackService;
   final ScannerBuilder scannerBuilder;
 
@@ -32,7 +29,6 @@ class PlayerPage extends StatefulWidget {
     required this.prefs,
     required this.audioPlaybackService,
     this.trackFileFinder = findTrackFile,
-    this.animatedTitle = true,
     this.scannerBuilder = _defaultScannerBuilder,
   });
 
@@ -48,7 +44,6 @@ class _PlayerPageState extends State<PlayerPage> {
   bool _loading = true;
   bool _completed = false;
   String? _error;
-  String? _gameName;
   bool _playing = false;
   Duration _pos = Duration.zero;
   Duration _dur = Duration.zero;
@@ -155,9 +150,6 @@ class _PlayerPageState extends State<PlayerPage> {
       return;
     }
 
-    final folderName = p.basename(file.parent.path);
-    final underscoreIdx = folderName.indexOf('_');
-
     AudioMetadata? tags;
     try {
       tags = readMetadata(file, getImage: true);
@@ -166,9 +158,6 @@ class _PlayerPageState extends State<PlayerPage> {
     setState(() {
       _file = file;
       _tags = tags;
-      _gameName = underscoreIdx != -1
-          ? folderName.substring(underscoreIdx + 1)
-          : folderName;
     });
 
     final startOffset = widget.prefs.getInt('playbackStartOffset') ?? 0;
@@ -225,7 +214,6 @@ class _PlayerPageState extends State<PlayerPage> {
             audioPlaybackService: widget.audioPlaybackService,
             trackFileFinder: widget.trackFileFinder,
             scannerBuilder: widget.scannerBuilder,
-            animatedTitle: widget.animatedTitle,
           ),
         ),
       );
@@ -256,95 +244,9 @@ class _PlayerPageState extends State<PlayerPage> {
     await widget.audioPlaybackService.resume();
   }
 
-
-  void _showInfoDialog() {
-    if (_file == null) return;
-
-    final size = _file!.lengthSync();
-    final sizeStr = formatBytes(size, 2);
-    final trackDisplay =
-        int.tryParse(widget.parsed.trackId.toString()) ?? widget.parsed.trackId;
-    final hasCover = _tags?.pictures.isNotEmpty == true;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Track Information'),
-        content: SingleChildScrollView(
-          child: ListBody(
-            children: [
-              if (hasCover)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => FullscreenCover(
-                            imageBytes: _tags!.pictures.first.bytes,
-                          ),
-                        ),
-                      );
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.memory(
-                        _tags!.pictures.first.bytes,
-                        height: 150,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              _infoRow('Track #', trackDisplay.toString()),
-              _infoRow('Game Set', _gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')),
-              if (_tags?.title != null && _tags!.title!.isNotEmpty)
-                _infoRow('Title', _tags!.title!),
-              if (_tags?.artist != null && _tags!.artist!.isNotEmpty)
-                _infoRow('Artist', _tags!.artist!),
-              if (_tags?.album != null && _tags!.album!.isNotEmpty)
-                _infoRow('Album', _tags!.album!),
-              if (_tags?.year != null && _tags!.year!.year != 0)
-                _infoRow('Year', _tags!.year!.year.toString()),
-              _infoRow('File Size', sizeStr),
-              _infoRow('File Name', p.basename(_file!.path)),
-              _infoRow('Full Path', _file!.path),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label,
-              style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                  color: Theme.of(context).colorScheme.primary)),
-          const SizedBox(height: 2),
-          SelectableText(value, style: const TextStyle(fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final trackDisplay = int.tryParse(widget.parsed.trackId.toString()) ?? widget.parsed.trackId;
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
@@ -353,21 +255,7 @@ class _PlayerPageState extends State<PlayerPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: cs.inversePrimary,
-          title: PlayerTitle(
-            text: '#$trackDisplay  ·  ${_gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root')}',
-            animated: widget.animatedTitle,
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.info_outline),
-              onPressed: _showInfoDialog,
-              tooltip: 'Track Info',
-            ),
-          ],
-        ),
-
+        appBar: AppBar( backgroundColor: cs.inversePrimary ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -390,66 +278,29 @@ class _PlayerPageState extends State<PlayerPage> {
     final maxMs = _dur.inMilliseconds.toDouble();
     final curMs =
     _pos.inMilliseconds.toDouble().clamp(0.0, maxMs > 0 ? maxMs : 1.0);
-    final trackDisplay = int.tryParse(widget.parsed.trackId.toString()) ?? widget.parsed.trackId;
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        GestureDetector(
-          key: const Key('scan-again'),
-          onTap: _scanAndPlay,
-          child: Container(
-            width: 200,
-            height: 200,
-            decoration: BoxDecoration(
-              color: cs.primaryContainer,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: cs.primary.withValues(alpha: 0.25),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Icon(
-              _playing ? Icons.music_note_rounded : Icons.music_note,
-              size: 80,
-              color: cs.onPrimaryContainer,
-            ),
-          ),
+        TrackCard(
+          data: widget.parsed.raw,
+          gamePack: widget.parsed.folders.isNotEmpty
+            ? widget.parsed.folders.last
+            : 'Root',
+          trackNumber: widget.parsed.trackId,
+          artist: _tags?.artist,
+          title: _tags?.title,
+          year: _tags?.year?.year,
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Click to scan again',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: cs.primary.withValues(alpha: 0.5),
-          ),
+        const SizedBox(height: 32),
+        FilledButton.tonalIcon(
+          key: const Key('scan-again'),
+          onPressed: _scanAndPlay,
+          icon: const Icon(Icons.qr_code_scanner),
+          label: const Text('Nächste Karte scannen'),
         ),
 
         const SizedBox(height: 24),
-
-        Text('Game Pack',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: Colors.grey)),
-        Text(
-          _gameName ?? (widget.parsed.folders.isNotEmpty ? widget.parsed.folders.last : 'Root'),
-          style: Theme.of(context)
-              .textTheme
-              .titleLarge
-              ?.copyWith(fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 4),
-        Text('Track #$trackDisplay',
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: Colors.grey)),
-
-        const SizedBox(height: 16),
 
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
