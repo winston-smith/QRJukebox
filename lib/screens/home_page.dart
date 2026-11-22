@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path/path.dart' as p;
-import 'package:qr_jukebox/pages/player_page.dart';
-import 'package:qr_jukebox/pages/settings_page.dart';
-import 'package:qr_jukebox/pages/scanner_page.dart';
-import 'package:qr_jukebox/utils/track_url_parser.dart';
+import 'package:path/path.dart' as path;
+
+import 'package:qr_jukebox/screens/scanner_page.dart';
+import 'package:qr_jukebox/screens/settings_page.dart';
+import 'package:qr_jukebox/screens/player_page.dart';
+import 'package:qr_jukebox/utils/url_parser.dart';
 
 class HomePage extends StatefulWidget {
   final SharedPreferences prefs;
@@ -110,7 +111,7 @@ class _HomePageState extends State<HomePage> {
       context,
       MaterialPageRoute(builder: (_) => SettingsPage(prefs: widget.prefs)),
     );
-    setState(() {}); 
+    setState(() {});
   }
 
   @override
@@ -120,7 +121,8 @@ class _HomePageState extends State<HomePage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: cs.inversePrimary,
+        backgroundColor: cs.primaryContainer,
+        foregroundColor: cs.onPrimaryContainer,
         title: const Text('QR Jukebox'),
         actions: [
           IconButton(
@@ -137,8 +139,13 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.qr_code_2_rounded, size: 96, color: cs.primary),
-              const SizedBox(height: 12),
+              Image.asset(
+                'assets/branding/app_icon_inapp.png',
+                width: 128,
+                height: 128,
+                color: cs.primary,
+              ),
+              const SizedBox(height: 4),
               Text(
                 'QR Jukebox',
                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -159,7 +166,7 @@ class _HomePageState extends State<HomePage> {
                   Flexible(
                     child: Text(
                       hasRoot
-                          ? p.basename(_mediaRoot)
+                          ? path.basename(_mediaRoot)
                           : 'No media folder configured',
                       key: const Key('mediaFolderText'),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -170,7 +177,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -219,4 +226,3 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-

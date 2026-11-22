@@ -1,19 +1,18 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path/path.dart' as p;
 import 'package:audio_metadata_reader/audio_metadata_reader.dart';
+import 'package:qr_jukebox/services/track_finder.dart';
 import 'package:qr_jukebox/widgets/player_error_view.dart';
 import 'package:qr_jukebox/widgets/player_title.dart';
-import 'package:qr_jukebox/pages/scanner_page.dart';
-import 'package:qr_jukebox/services/track_file_finder.dart';
-import 'package:qr_jukebox/utils/fmt.dart';
-import 'package:qr_jukebox/utils/track_url_parser.dart';
+import 'package:qr_jukebox/app/fullscreen_cover.dart';
+import 'package:qr_jukebox/utils/formatting.dart';
+import 'package:qr_jukebox/utils/url_parser.dart';
+import 'package:qr_jukebox/screens/scanner_page.dart';
 
 typedef ScannerBuilder = Widget Function();
 
@@ -68,10 +67,10 @@ class _PlayerPageState extends State<PlayerPage> {
         widget.audioPlaybackService.playing.listen((playing) {
       if (!mounted) return;
 
-      setState(() {
+        setState(() {
         _playing = playing;
         if (playing) _completed = false;
-      });
+        });
     });
 
     _positionSubscription =
@@ -125,7 +124,7 @@ class _PlayerPageState extends State<PlayerPage> {
         if (mounted) {
           setState(() {
             _error =
-                'Storage access denied.\n\nPlease allow storage permission in Android settings.';
+            'Storage access denied.\n\nPlease allow storage permission in Android settings.';
             _loading = false;
           });
         }
@@ -177,8 +176,8 @@ class _PlayerPageState extends State<PlayerPage> {
     try {
       await widget.audioPlaybackService.play(
         file.path,
-        position: Duration(seconds: startOffset),
-      );
+      position: Duration(seconds: startOffset),
+    );
 
       if (mounted) {
         setState(() {
@@ -257,18 +256,12 @@ class _PlayerPageState extends State<PlayerPage> {
     await widget.audioPlaybackService.resume();
   }
 
-  String _formatBytes(int bytes, int decimals) {
-    if (bytes <= 0) return "0 B";
-    const suffixes = ["B", "KB", "MB", "GB", "TB"];
-    var i = (log(bytes) / log(1024)).floor();
-    return '${(bytes / pow(1024, i)).toStringAsFixed(decimals)} ${suffixes[i]}';
-  }
 
   void _showInfoDialog() {
     if (_file == null) return;
 
     final size = _file!.lengthSync();
-    final sizeStr = _formatBytes(size, 2);
+    final sizeStr = formatBytes(size, 2);
     final trackDisplay =
         int.tryParse(widget.parsed.trackId.toString()) ?? widget.parsed.trackId;
     final hasCover = _tags?.pictures.isNotEmpty == true;
@@ -389,7 +382,7 @@ class _PlayerPageState extends State<PlayerPage> {
   Widget _buildPlayer(ColorScheme cs) {
     final maxMs = _dur.inMilliseconds.toDouble();
     final curMs =
-        _pos.inMilliseconds.toDouble().clamp(0.0, maxMs > 0 ? maxMs : 1.0);
+    _pos.inMilliseconds.toDouble().clamp(0.0, maxMs > 0 ? maxMs : 1.0);
     final trackDisplay = int.tryParse(widget.parsed.trackId.toString()) ?? widget.parsed.trackId;
 
     return Column(
@@ -447,25 +440,36 @@ class _PlayerPageState extends State<PlayerPage> {
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
-                ?.copyWith(color: const Color.fromARGB(255, 158, 158, 158))),
+                ?.copyWith(color: Colors.grey)),
 
         const SizedBox(height: 16),
 
-        Slider(
-          value: curMs,
-          max: maxMs > 0 ? maxMs : 1.0,
-          onChanged: maxMs > 0
-              ? (v) => widget.audioPlaybackService.seek(Duration(milliseconds: v.toInt()))
-              : null,
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: cs.primary,
+            inactiveTrackColor: cs.primary.withValues(alpha: 0.24),
+            thumbColor: cs.primary,
+            overlayColor: cs.primary.withValues(alpha: 0.12),
+            trackHeight: 4.0,
+          ),
+          child: Slider(
+            value: curMs,
+            max: maxMs > 0 ? maxMs : 1.0,
+            onChanged: (v) {
+              if (maxMs > 0) {
+                widget.audioPlaybackService.seek(Duration(milliseconds: v.toInt()));
+              }
+            },
+          ),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(fmt(_pos),
+              Text(formatDuration(_pos),
                   style: Theme.of(context).textTheme.bodySmall),
-              Text(fmt(_dur),
+              Text(formatDuration(_dur),
                   style: Theme.of(context).textTheme.bodySmall),
             ],
           ),
@@ -525,7 +529,7 @@ class _PlayerPageState extends State<PlayerPage> {
                     Icon(Icons.timer_outlined, size: 18, color: cs.onSecondaryContainer),
                     const SizedBox(width: 8),
                     Text(
-                      'Spent time: ${fmt(elapsed)}',
+                      'Spent time: ${formatDuration(elapsed)}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: cs.onSecondaryContainer,
@@ -538,39 +542,6 @@ class _PlayerPageState extends State<PlayerPage> {
           ),
         ],
       ],
-    );
-  }
-}
-
-class FullscreenCover extends StatelessWidget {
-  final List<int> imageBytes;
-  const FullscreenCover({super.key, required this.imageBytes});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Center(
-          child: Hero(
-            tag: 'cover',
-            child: Image.memory(
-              Uint8List.fromList(imageBytes),
-              fit: BoxFit.contain,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

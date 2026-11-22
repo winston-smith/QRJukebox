@@ -15,9 +15,9 @@ ParsedTrackUrl? parseUrl(String raw) {
 
     if (host.isNotEmpty && segs.length >= 2) {
       return (
-        host: host,
-        folders: segs.sublist(0, segs.length - 1),
-        trackId: segs.last,
+      host: host,
+      folders: segs.sublist(0, segs.length - 1),
+      trackId: segs.last,
       );
     }
   } catch (_) {}

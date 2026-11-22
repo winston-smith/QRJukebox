@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qr_jukebox/services/track_file_finder.dart';
+import 'package:qr_jukebox/services/track_finder.dart';
 
 void main() {
   group('findTrackFile', () {

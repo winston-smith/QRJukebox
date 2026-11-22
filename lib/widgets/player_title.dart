@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:marquee/marquee.dart';
 
 class PlayerTitle extends StatelessWidget {
@@ -26,22 +26,28 @@ class PlayerTitle extends StatelessWidget {
       );
     }
 
-    return SizedBox(
-      height: 24,
-      child: Marquee(
-        text: text,
-        style: style,
-        scrollAxis: Axis.horizontal,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        blankSpace: 50.0,
-        velocity: 30.0,
-        pauseAfterRound: const Duration(seconds: 2),
-        startPadding: 0.0,
-        accelerationDuration: const Duration(seconds: 1),
-        accelerationCurve: Curves.linear,
-        decelerationDuration: const Duration(milliseconds: 500),
-        decelerationCurve: Curves.easeOut,
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: SizedBox(
+            height: 24,
+            child: Marquee(
+              text: text,
+              style: style,
+              scrollAxis: Axis.horizontal,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              blankSpace: 50.0,
+              velocity: 30.0,
+              pauseAfterRound: const Duration(seconds: 2),
+              startPadding: 0.0,
+              accelerationDuration: const Duration(seconds: 1),
+              accelerationCurve: Curves.linear,
+              decelerationDuration: const Duration(milliseconds: 500),
+              decelerationCurve: Curves.easeOut,
+            ),
+          )
+        )
+      ]
     );
   }
 }

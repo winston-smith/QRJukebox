@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qr_jukebox/app/qr_jukebox_app.dart';
+import 'package:qr_jukebox/screens/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:qr_jukebox/main.dart';
-import 'package:qr_jukebox/pages/home_page.dart';
 
 import '../fakes/fake_audio_playback_service.dart';
 
@@ -33,8 +33,10 @@ void main() {
         expect(find.byKey(const Key('settingsButton')), findsOneWidget);
 
         // Main branding
-        expect(find.byIcon(Icons.qr_code_2_rounded), findsOneWidget);
-
+        expect(
+          find.image( const AssetImage('assets/branding/app_icon_inapp.png') ),
+          findsOneWidget,
+        );
         // Main actions
         expect(find.byKey(const Key('scanQRButton')), findsOneWidget);
         expect(find.byKey(const Key('enterURLButton')), findsOneWidget);

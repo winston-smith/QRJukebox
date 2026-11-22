@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:qr_jukebox/utils/track_url_parser.dart';
+import 'package:qr_jukebox/utils/url_parser.dart';
 
 void main() {
   group('parseUrl', () {

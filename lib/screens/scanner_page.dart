@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart'; //for HapticFeedback
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
 class ScannerPage extends StatefulWidget {
@@ -39,4 +39,3 @@ class _ScannerPageState extends State<ScannerPage> {
     );
   }
 }
-
