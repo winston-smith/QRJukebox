@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:qr_jukebox/config/app_config.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
@@ -277,7 +278,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 8),
                 TextButton.icon(
                   onPressed: () => launchUrl(
-                    Uri.parse('https://github.com/lexygo/QRJukebox'),
+                    Uri.parse(AppConfig.repositoryUrl),
                     mode: LaunchMode.externalApplication,
                   ),
                   icon: const Icon(Icons.code),
