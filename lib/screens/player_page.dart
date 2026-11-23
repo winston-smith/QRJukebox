@@ -259,7 +259,10 @@ class _PlayerPageState extends State<PlayerPage> {
         }
       },
       child: Scaffold(
-        appBar: AppBar(backgroundColor: cs.inversePrimary),
+        appBar: AppBar(
+          title: const Text('QR Jukebox'),
+          backgroundColor: cs.inversePrimary
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(24),
