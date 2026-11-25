@@ -176,7 +176,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Open scanner.
-      await tester.tap(find.byKey(const Key('scan-again')));
+      await tester.tap(find.byKey(const Key('scan-next')));
       await tester.pumpAndSettle();
 
       expect(find.byType(FakeScannerPage), findsOneWidget);
@@ -199,7 +199,7 @@ void main() {
       );
     });
 
-    testWidgets('stops playback when the scanned track cannot be found', (
+    testWidgets('stops playback before scanning the next track', (
       tester,
     ) async {
       final fakeService = FakeAudioPlaybackService();
@@ -246,16 +246,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // Open scanner.
-      await tester.tap(find.byKey(const Key('scan-again')));
+      await tester.tap(find.byKey(const Key('scan-next')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(FakeScannerPage), findsOneWidget);
-
-      // Scan a track that does not exist.
-      await tester.tap(find.byKey(const Key('simulate-scan')));
-      await tester.pumpAndSettle();
-
-      expect(fakeService.stopCalls, 2);
+      expect(fakeService.stopCalls, 1);
       expect(fakeService.playedFiles, ['/unused/00001.mp3']);
     });
 
@@ -471,9 +465,6 @@ void main() {
 
       expect(fakeService.playedFiles, ['/unused/00001_test.mp3']);
 
-      // The initial stop() happens before playback starts.
-      expect(fakeService.stopCalls, 1);
-
       // Navigate back to the homepage.
       await tester.pageBack();
       await tester.pumpAndSettle();
@@ -481,7 +472,7 @@ void main() {
       expect(find.text('Open player'), findsOneWidget);
 
       // Playback should have been stopped when leaving the player.
-      expect(fakeService.stopCalls, 2);
+      expect(fakeService.stopCalls, 1);
 
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);

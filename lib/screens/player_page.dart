@@ -135,9 +135,6 @@ class _PlayerPageState extends State<PlayerPage> {
       trackId: widget.parsed.trackId,
     );
 
-    // Stop previous playback before handling the scanned track.
-    await widget.audioPlaybackService.stop();
-
     if (!mounted) return;
 
     if (file == null) {
@@ -195,6 +192,9 @@ class _PlayerPageState extends State<PlayerPage> {
   }
 
   Future<void> _scanAndPlay() async {
+    // Stop previous playback before scanning the next track.
+    widget.audioPlaybackService.stop();
+
     final result = await Navigator.push<String>(
       context,
       MaterialPageRoute(builder: (_) => widget.scannerBuilder()),
@@ -301,7 +301,7 @@ class _PlayerPageState extends State<PlayerPage> {
         ),
         const SizedBox(height: 32),
         FilledButton.tonalIcon(
-          key: const Key('scan-again'),
+          key: const Key('scan-next'),
           onPressed: _scanAndPlay,
           icon: const Icon(Icons.qr_code_scanner),
           label: const Text('Nächste Karte scannen'),
