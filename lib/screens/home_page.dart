@@ -35,19 +35,27 @@ class _HomePageState extends State<HomePage> {
 
   void _handleUrl(String url) {
     final parsed = parseUrl(url);
+
     if (parsed == null) {
       _snack('Invalid URL format');
       return;
     }
+
+    if (parsed is ParsedPack) {
+      _snack('Pack URLs are not supported here yet.');
+      return;
+    }
+
     if (_mediaRoot.isEmpty) {
       _snack('Please set the media folder in settings first.');
       return;
     }
+
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PlayerPage(
-          parsed: parsed,
+          parsed: (parsed as ParsedTrack).data,
           mediaRoot: _mediaRoot,
           prefs: widget.prefs,
           audioPlaybackService: widget.audioPlaybackService,

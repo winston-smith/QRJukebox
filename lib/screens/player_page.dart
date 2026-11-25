@@ -201,17 +201,19 @@ class _PlayerPageState extends State<PlayerPage> {
     );
     if (result != null && mounted) {
       final parsed = parseUrl(result);
-      if (parsed == null) {
+
+      if (parsed is! ParsedTrack) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Invalid URL format')),
         );
         return;
       }
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => PlayerPage(
-            parsed: parsed,
+            parsed: parsed.data,
             mediaRoot: widget.mediaRoot,
             prefs: widget.prefs,
             audioPlaybackService: widget.audioPlaybackService,
@@ -220,6 +222,7 @@ class _PlayerPageState extends State<PlayerPage> {
           ),
         ),
       );
+
     }
   }
 
