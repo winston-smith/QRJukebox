@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:qr_jukebox/config/app_config.dart';
+import 'package:qr_jukebox/domain/repositories/media_source_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,8 +11,13 @@ import 'package:qr_jukebox/services/app_version.dart';
 
 class SettingsPage extends StatefulWidget {
   final SharedPreferences prefs;
-  const SettingsPage({super.key, required this.prefs});
+  final MediaSourceRepository mediaSourceRepository;
 
+  const SettingsPage({
+    super.key,
+    required this.prefs,
+    required this.mediaSourceRepository,
+  });
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }

@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:qr_jukebox/domain/repositories/installed_pack_repository.dart';
+import 'package:qr_jukebox/domain/repositories/media_source_repository.dart';
+import 'package:qr_jukebox/domain/services/pack_storage.dart';
+import 'package:qr_jukebox/infrastructure/default_installed_pack_repository.dart';
+import 'package:qr_jukebox/infrastructure/default_media_source_repository.dart';
 import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qr_jukebox/screens/home_page.dart';
@@ -8,11 +13,13 @@ import 'package:qr_jukebox/screens/home_page.dart';
 class QRJukeboxApp extends StatefulWidget {
   final SharedPreferences prefs;
   final AudioPlaybackService audioPlaybackService;
+  final PackStorage packStorage;
 
   const QRJukeboxApp({
     super.key,
     required this.prefs,
     required this.audioPlaybackService,
+    required this.packStorage,
   });
 
   static QRJukeboxAppState? of(BuildContext context) =>
@@ -23,7 +30,37 @@ class QRJukeboxApp extends StatefulWidget {
 }
 
 class QRJukeboxAppState extends State<QRJukeboxApp> {
+  late final MediaSourceRepository _mediaSourceRepository;
+  late final InstalledPackRepository _installedPackRepository;
+  bool _dependenciesReady = false;
+
   static const _defaultSeedColor = Color(0xFF6750A4);
+
+  @override
+  void initState() {
+    super.initState();
+
+    _initializeDependencies();
+  }
+
+  Future<void> _initializeDependencies() async {
+    _mediaSourceRepository = DefaultMediaSourceRepository(
+      prefs: widget.prefs,
+    );
+
+    final packsDirectory = await widget.packStorage.getPacksDirectory();
+    if (!mounted) {
+      return;
+    }
+
+    _installedPackRepository = DefaultInstalledPackRepository(
+      packsDirectory: packsDirectory,
+    );
+
+    setState(() {
+      _dependenciesReady = true;
+    });
+  }
 
   void reloadTheme() {
     setState(() {});
@@ -65,6 +102,14 @@ class QRJukeboxAppState extends State<QRJukeboxApp> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_dependenciesReady) {
+      return const MaterialApp(
+        home: Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     final themeModeStr = widget.prefs.getString('themeMode') ?? 'system';
     final ThemeMode themeMode;
     switch (themeModeStr) {
@@ -127,6 +172,8 @@ class QRJukeboxAppState extends State<QRJukeboxApp> {
           home: HomePage(
             prefs: widget.prefs,
             audioPlaybackService: widget.audioPlaybackService,
+            mediaSourceRepository: _mediaSourceRepository,
+            installedPackRepository: _installedPackRepository,
           ),
         );
       },

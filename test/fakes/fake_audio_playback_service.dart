@@ -26,6 +26,7 @@ class FakeAudioPlaybackService implements AudioPlaybackService {
   int resumeCalls = 0;
   int seekCalls = 0;
   int stopCalls = 0;
+  int disposeCalls = 0;
 
   Duration? lastSeekPosition;
 
@@ -88,6 +89,8 @@ class FakeAudioPlaybackService implements AudioPlaybackService {
 
   @override
   Future<void> dispose() async {
+    disposeCalls++;
+
     await _playingController.close();
     await _positionController.close();
     await _durationController.close();

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_jukebox/app/qr_jukebox_app.dart';
@@ -5,6 +7,9 @@ import 'package:qr_jukebox/screens/home_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes/fake_audio_playback_service.dart';
+import '../fakes/fake_installed_pack_repository.dart';
+import '../fakes/fake_media_source_repository.dart';
+import '../fakes/fake_pack_storage.dart';
 
 void main() {
   group('Home Page', () {
@@ -19,8 +24,11 @@ void main() {
         await pumpMyWidget(
             tester,
             HomePage(
-                prefs: prefs,
-                audioPlaybackService: FakeAudioPlaybackService()));
+              prefs: prefs,
+              audioPlaybackService: FakeAudioPlaybackService(),
+              mediaSourceRepository: FakeMediaSourceRepository(),
+              installedPackRepository: FakeInstalledPackRepository(),
+            ));
 
         // find app title in AppBar
         final appBar = find.byType(AppBar);
@@ -56,8 +64,11 @@ void main() {
         await pumpMyWidget(
             tester,
             HomePage(
-                prefs: prefs,
-                audioPlaybackService: FakeAudioPlaybackService()));
+              prefs: prefs,
+              audioPlaybackService: FakeAudioPlaybackService(),
+              mediaSourceRepository: FakeMediaSourceRepository(),
+              installedPackRepository: FakeInstalledPackRepository(),
+            ));
 
         final text = tester.widget<Text>(
           find.byKey(const Key('mediaFolderText')),
@@ -72,13 +83,23 @@ void main() {
     group('Interactions', () {
       testWidgets('navigates to settings page and returns back home',
           (tester) async {
+        final packStorage = FakePackStorage();
+
         await tester.pumpWidget(QRJukeboxApp(
           prefs: prefs,
           audioPlaybackService: FakeAudioPlaybackService(),
+          packStorage: packStorage,
         ));
 
+        packStorage.completer.complete(Directory('/fake/packs'));
+
+        await tester.runAsync(() async {
+          await Future<void>.delayed(Duration.zero);
+        });
+        await tester.pump();
+
         await tester.tap(find.byKey(const Key('settingsButton')));
-        await tester.pumpAndSettle();
+        await tester.pumpAndSettle(const Duration(milliseconds: 100));
 
         final appBarSettings = find.byType(AppBar);
         expect(appBarSettings, findsOneWidget);
@@ -88,7 +109,7 @@ void main() {
         );
 
         await tester.pageBack();
-        await tester.pumpAndSettle();
+        await tester.pumpAndSettle(const Duration(milliseconds: 100));
 
         final appBarHome = find.byType(AppBar);
         expect(appBarHome, findsOneWidget);

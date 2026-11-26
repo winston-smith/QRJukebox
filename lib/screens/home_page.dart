@@ -1,4 +1,6 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:qr_jukebox/domain/repositories/installed_pack_repository.dart';
+import 'package:qr_jukebox/domain/repositories/media_source_repository.dart';
 import 'package:qr_jukebox/services/audio_playback_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
@@ -11,11 +13,15 @@ import 'package:qr_jukebox/utils/url_parser.dart';
 class HomePage extends StatefulWidget {
   final SharedPreferences prefs;
   final AudioPlaybackService audioPlaybackService;
+  final MediaSourceRepository mediaSourceRepository;
+  final InstalledPackRepository installedPackRepository;
 
   const HomePage({
     super.key,
     required this.prefs,
     required this.audioPlaybackService,
+    required this.mediaSourceRepository,
+    required this.installedPackRepository,
   });
 
   @override
@@ -116,7 +122,12 @@ class _HomePageState extends State<HomePage> {
   void _openSettings() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => SettingsPage(prefs: widget.prefs)),
+      MaterialPageRoute(
+        builder: (_) => SettingsPage(
+          prefs: widget.prefs,
+          mediaSourceRepository: widget.mediaSourceRepository,
+        ),
+      ),
     );
     setState(() {});
   }

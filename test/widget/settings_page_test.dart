@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes/fake_audio_playback_service.dart';
 import '../fakes/fake_file_picker.dart';
+import '../fakes/fake_media_source_repository.dart';
+import '../fakes/fake_pack_storage.dart';
 
 void main() {
   group('Settings Page', () {
@@ -24,7 +28,11 @@ void main() {
     group('UI', () {
       testWidgets('displays settings page correctly with empty settings',
           (tester) async {
-        await pumpMyWidget(tester, SettingsPage(prefs: prefs),
+        await pumpMyWidget(
+            tester,
+            SettingsPage(
+                prefs: prefs,
+                mediaSourceRepository: FakeMediaSourceRepository()),
             size: const Size(1179, 6000));
 
         // find 'Settings' in AppBar
@@ -54,7 +62,11 @@ void main() {
         await prefs.setBool('keepAwake', true);
         await prefs.setBool('showStopwatch', true);
 
-        await pumpMyWidget(tester, SettingsPage(prefs: prefs),
+        await pumpMyWidget(
+            tester,
+            SettingsPage(
+                prefs: prefs,
+                mediaSourceRepository: FakeMediaSourceRepository()),
             size: const Size(1179, 6000));
 
         final keepAwakeSwitch = tester
@@ -80,10 +92,19 @@ void main() {
     group('Interactions', () {
       testWidgets('saves keepAwake setting when switch is changed',
           (tester) async {
+        final packStorage = FakePackStorage();
         await tester.pumpWidget(QRJukeboxApp(
           prefs: prefs,
           audioPlaybackService: FakeAudioPlaybackService(),
+          packStorage: packStorage,
         ));
+
+        packStorage.completer.complete(Directory('/fake/packs'));
+
+        await tester.runAsync(() async {
+          await Future<void>.delayed(Duration.zero);
+        });
+        await tester.pump();
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -118,10 +139,19 @@ void main() {
 
       testWidgets('saves showStopwatch setting when switch is changed',
           (tester) async {
+        final packStorage = FakePackStorage();
         await tester.pumpWidget(QRJukeboxApp(
           prefs: prefs,
           audioPlaybackService: FakeAudioPlaybackService(),
+          packStorage: packStorage,
         ));
+
+        packStorage.completer.complete(Directory('/fake/packs'));
+
+        await tester.runAsync(() async {
+          await Future<void>.delayed(Duration.zero);
+        });
+        await tester.pump();
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -138,10 +168,19 @@ void main() {
 
       testWidgets('saves playback offset when value is changed',
           (tester) async {
+        final packStorage = FakePackStorage();
         await tester.pumpWidget(QRJukeboxApp(
           prefs: prefs,
           audioPlaybackService: FakeAudioPlaybackService(),
+          packStorage: packStorage,
         ));
+
+        packStorage.completer.complete(Directory('/fake/packs'));
+
+        await tester.runAsync(() async {
+          await Future<void>.delayed(Duration.zero);
+        });
+        await tester.pump();
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();
@@ -161,12 +200,22 @@ void main() {
         tester.view.physicalSize = const Size(1179, 6000);
         tester.view.devicePixelRatio = 3.0;
 
+        final packStorage = FakePackStorage();
+
         await tester.pumpWidget(
           QRJukeboxApp(
             prefs: prefs,
             audioPlaybackService: FakeAudioPlaybackService(),
+            packStorage: packStorage,
           ),
         );
+
+        packStorage.completer.complete(Directory('/fake/packs'));
+
+        await tester.runAsync(() async {
+          await Future<void>.delayed(Duration.zero);
+        });
+        await tester.pump();
 
         await tester.tap(find.byKey(const Key('settingsButton')));
         await tester.pumpAndSettle();

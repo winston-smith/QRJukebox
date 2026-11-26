@@ -54,6 +54,7 @@ dependencies:
   qr_flutter: ^4.1.0
   archive: ^4.7.1
   crypto: ^3.0.8
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

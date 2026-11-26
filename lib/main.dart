@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_jukebox/infrastructure/audioplayers_audio_playback_service.dart';
+import 'package:qr_jukebox/infrastructure/default_pack_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -31,5 +32,6 @@ void main() async {
   runApp(QRJukeboxApp(
     prefs: prefs,
     audioPlaybackService: audioPlaybackService,
+    packStorage: DefaultPackStorage(),
   ));
 }
