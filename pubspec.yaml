@@ -34,7 +34,7 @@ dependencies:
   audioplayers: ^6.1.0
   shared_preferences: ^2.3.2
   permission_handler: ^11.3.1
-  path: ^1.9.0
+  path: ^1.9.1
   marquee: ^2.2.3
   file_picker: ^13.3.2
   wakelock_plus: ^1.2.11
@@ -52,6 +52,8 @@ dependencies:
   mocktail: ^1.0.5
   material_ui: ^1.11.1
   qr_flutter: ^4.1.0
+  archive: ^4.7.1
+  crypto: ^3.0.8
 
 dev_dependencies:
   flutter_test:
