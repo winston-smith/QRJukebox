@@ -8,6 +8,8 @@ import 'package:path/path.dart' as p;
 import 'package:qr_jukebox/domain/entities/installed_pack.dart';
 import 'package:qr_jukebox/services/pack_download_service.dart';
 import 'package:qr_jukebox/services/pack_install_service.dart';
+import 'package:qr_jukebox/infrastructure/pack_metadata.dart';
+
 
 class DefaultPackInstallService implements PackInstallService {
   final PackDownloadService downloadService;
@@ -55,6 +57,12 @@ class DefaultPackInstallService implements PackInstallService {
         archiveFile,
         stagingDirectory,
         password,
+      );
+
+      await _writePackMetadata(
+        directory: stagingDirectory,
+        id: id,
+        sourceUrl: url,
       );
 
       final destination = Directory(
@@ -212,5 +220,23 @@ class DefaultPackInstallService implements PackInstallService {
     } finally {
       input.closeSync();
     }
+  }
+
+  Future<void> _writePackMetadata({
+    required Directory directory,
+    required String id,
+    required Uri sourceUrl,
+  }) async {
+    final metadataFile = File(
+      p.join(directory.path, packMetadataFileName),
+    );
+
+    await metadataFile.writeAsString(
+      jsonEncode({
+        'id': id,
+        'name': id,
+        'sourceUrl': sourceUrl.toString(),
+      }),
+    );
   }
 }

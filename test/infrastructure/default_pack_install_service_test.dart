@@ -3,10 +3,12 @@ import 'dart:io';
 
 import 'package:archive/archive.dart';
 import 'package:crypto/crypto.dart';
+import 'package:path/path.dart' as p;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qr_jukebox/domain/entities/installed_pack.dart';
 import 'package:qr_jukebox/services/pack_download_service.dart';
 import 'package:qr_jukebox/infrastructure/default_pack_install_service.dart';
+import 'package:qr_jukebox/infrastructure/pack_metadata.dart';
 
 void main() {
   group('DefaultPackInstallService', () {
@@ -81,6 +83,20 @@ void main() {
       );
       expect(await extractedFile.readAsString(), 'QRJukebox AES-256 test\n');
       expect(await downloadedArchive.exists(), isFalse);
+
+      final metadataFile = File(
+        p.join(installedPack.directory, packMetadataFileName),
+      );
+
+      expect(await metadataFile.exists(), isTrue);
+
+      final metadata = jsonDecode(
+        await metadataFile.readAsString(),
+      ) as Map<String, dynamic>;
+
+      expect(metadata['id'], 'test-pack');
+      expect(metadata['name'], 'test-pack');
+      expect(metadata['sourceUrl'], packUrl.toString());
     });
 
     test('rejects an incorrect password', () async {

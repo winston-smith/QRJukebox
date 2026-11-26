@@ -1,0 +1,1 @@
+const packMetadataFileName = 'pack.json';
